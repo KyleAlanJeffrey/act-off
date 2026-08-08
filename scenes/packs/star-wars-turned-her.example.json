@@ -2,15 +2,41 @@
   "id": "star-wars-turned-her",
   "title": "You Turned Her Against Me",
   "tagline": "High ground negotiations break down.",
-  "trim": { "startMs": 0, "endMs": null },
+  "trim": {
+    "startMs": 0,
+    "endMs": null
+  },
   "characters": [
-    { "id": "anakin", "name": "Anakin", "emoji": "🔥" },
-    { "id": "obiwan", "name": "Obi-Wan", "emoji": "🧔" }
+    {
+      "id": "anakin",
+      "name": "Anakin",
+      "emoji": "🔥"
+    },
+    {
+      "id": "obiwan",
+      "name": "Obi-Wan",
+      "emoji": "🧔"
+    }
   ],
   "lines": [
-    { "characterId": "anakin", "text": "FILL IN: Anakin's first line", "startMs": 0, "endMs": 2000 },
-    { "characterId": "obiwan", "text": "FILL IN: Obi-Wan's reply", "startMs": 2400, "endMs": 4500 },
-    { "characterId": "anakin", "text": "FILL IN: next line", "startMs": 5000, "endMs": 7000 }
+    {
+      "characterId": "anakin",
+      "text": "You turned her against me!",
+      "startMs": 0,
+      "endMs": 2000
+    },
+    {
+      "characterId": "obiwan",
+      "text": "Obi-Wan's reply",
+      "startMs": 2400,
+      "endMs": 4500
+    },
+    {
+      "characterId": "anakin",
+      "text": "Next line",
+      "startMs": 5000,
+      "endMs": 7000
+    }
   ],
   "_howto": [
     "This mirrors The Choicer Voicer's Star Wars dub pack (~17 lines, ~85s, 2 characters).",

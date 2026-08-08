@@ -88,3 +88,19 @@ npm run scene:pack -- ~/Movies/your-clip.mp4 scenes/packs/star-wars-turned-her.j
 
 4. Refresh — the scene appears in the picker. `trim.startMs/endMs` cuts extra footage;
    line timings auto-shift.
+
+### Background audio without the original dialogue
+
+The screening keeps the scene's music/ambience under your takes while removing the
+original dialogue. `scene:pack` builds the stems automatically, best method first:
+
+1. **5.1/7.1 sources** (most movie files): dialogue lives in the center channel, so the
+   pack gets `background.m4a` (downmix without FC) and `vocals.m4a` (FC alone) for free —
+   near-perfect separation, no extra tools.
+2. **Stereo sources**: install [demucs](https://github.com/adefossez/demucs)
+   (`pipx install demucs`) and rebuild — AI vocal separation produces the same two stems.
+3. **Neither available**: the screening falls back to playing the original audio only in
+   the gaps between lines, so takes never fight the real dialogue.
+
+Tip: when grabbing a clip, keep the surround audio track (don't downmix to stereo) and
+the separation stays free.

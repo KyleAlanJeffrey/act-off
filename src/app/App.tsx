@@ -13,6 +13,8 @@ export default function App() {
   const [scenes, setScenes] = useState<Scene[]>([]);
   const [scene, setScene] = useState<Scene | null>(null);
   const [originalBuffer, setOriginalBuffer] = useState<AudioBuffer | null>(null);
+  const [backgroundBuffer, setBackgroundBuffer] = useState<AudioBuffer | null>(null);
+  const [vocalsBuffer, setVocalsBuffer] = useState<AudioBuffer | null>(null);
   const [mic, setMic] = useState<MicSession | null>(null);
   const [takes, setTakes] = useState<Map<number, Take>>(new Map());
   const [loadError, setLoadError] = useState<string | null>(null);
@@ -37,10 +39,24 @@ export default function App() {
   const pickScene = async (s: Scene) => {
     setScene(s);
     setTakes(new Map());
+    setBackgroundBuffer(null);
+    setVocalsBuffer(null);
     setPhase("cast");
-    // Decode the original audio while the casting splash plays
+    // Decode the scene audio (and stems, if the pack has them) while the
+    // casting splash plays
     try {
-      setOriginalBuffer(await fetchAudioBuffer(sceneAssetUrl(s.id, "original.m4a")));
+      const [original, background, vocals] = await Promise.all([
+        fetchAudioBuffer(sceneAssetUrl(s.id, "original.m4a")),
+        s.hasBackground
+          ? fetchAudioBuffer(sceneAssetUrl(s.id, "background.m4a"))
+          : Promise.resolve(null),
+        s.hasVocals
+          ? fetchAudioBuffer(sceneAssetUrl(s.id, "vocals.m4a"))
+          : Promise.resolve(null),
+      ]);
+      setOriginalBuffer(original);
+      setBackgroundBuffer(background);
+      setVocalsBuffer(vocals);
     } catch {
       setLoadError("Could not load the scene audio.");
       setPhase("select");
@@ -54,6 +70,8 @@ export default function App() {
   const backToSelect = () => {
     setScene(null);
     setOriginalBuffer(null);
+    setBackgroundBuffer(null);
+    setVocalsBuffer(null);
     setTakes(new Map());
     setPhase("select");
   };
@@ -103,6 +121,8 @@ export default function App() {
         <Screening
           scene={scene}
           originalBuffer={originalBuffer}
+          backgroundBuffer={backgroundBuffer}
+          vocalsBuffer={vocalsBuffer}
           takes={takes}
           onBackToStudio={() => setPhase("studio")}
           onNewScene={backToSelect}

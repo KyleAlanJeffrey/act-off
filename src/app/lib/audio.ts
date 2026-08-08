@@ -129,34 +129,63 @@ export class MicSession {
 }
 
 /**
- * Screening mixer: schedules every line's audio (player take, or the original
- * segment as fallback) against video playback starting from t=0.
+ * Screening mixer: schedules the scene audio + every line (player take, with
+ * the original dialogue as fallback) against video playback starting from t=0.
+ *
+ * Two modes:
+ * - With a background stem (scene audio minus dialogue): the background plays
+ *   for the whole scene, takes land on top at their line times. Unrecorded
+ *   lines fall back to the vocals stem (dialogue only) when present, else the
+ *   full original segment.
+ * - Without one: the original plays only in the gaps between lines, so takes
+ *   never fight the real dialogue.
  */
-export function scheduleScreening(
-  original: AudioBuffer,
-  lines: { startMs: number; endMs: number; take?: AudioBuffer }[],
-  leadInSec = 0.15
-): { startTime: number; stop: () => void } {
+export function scheduleScreening(opts: {
+  original: AudioBuffer;
+  background?: AudioBuffer;
+  vocals?: AudioBuffer;
+  durationMs: number;
+  lines: { startMs: number; endMs: number; take?: AudioBuffer }[];
+  leadInSec?: number;
+}): { startTime: number; stop: () => void } {
   const ac = audioCtx();
-  const t0 = ac.currentTime + leadInSec;
+  const t0 = ac.currentTime + (opts.leadInSec ?? 0.15);
   const sources: AudioBufferSourceNode[] = [];
 
-  for (const line of lines) {
+  const playSlice = (buffer: AudioBuffer, atMs: number, fromMs: number, toMs: number) => {
+    if (toMs <= fromMs) return;
     const src = ac.createBufferSource();
+    src.buffer = buffer;
+    src.connect(ac.destination);
+    src.start(t0 + atMs / 1000, fromMs / 1000, (toMs - fromMs) / 1000);
+    sources.push(src);
+  };
+
+  if (opts.background) {
+    // Dialogue-free bed under everything
+    playSlice(opts.background, 0, 0, opts.durationMs);
+  } else {
+    // No stem: original audio in the gaps around lines only
+    const sorted = [...opts.lines].sort((a, b) => a.startMs - b.startMs);
+    let cursor = 0;
+    for (const line of sorted) {
+      playSlice(opts.original, cursor, cursor, line.startMs);
+      cursor = Math.max(cursor, line.endMs);
+    }
+    playSlice(opts.original, cursor, cursor, opts.durationMs);
+  }
+
+  for (const line of opts.lines) {
     if (line.take) {
+      const src = ac.createBufferSource();
       src.buffer = line.take;
       src.connect(ac.destination);
       src.start(t0 + line.startMs / 1000);
+      sources.push(src);
     } else {
-      src.buffer = original;
-      src.connect(ac.destination);
-      src.start(
-        t0 + line.startMs / 1000,
-        line.startMs / 1000,
-        (line.endMs - line.startMs) / 1000
-      );
+      // Unrecorded line: dialogue-only stem if we have it, else the full mix
+      playSlice(opts.vocals ?? opts.original, line.startMs, line.startMs, line.endMs);
     }
-    sources.push(src);
   }
 
   return {

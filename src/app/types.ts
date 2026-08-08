@@ -17,6 +17,10 @@ export type Scene = {
   title: string;
   tagline: string;
   durationMs: number;
+  /** True when the pack includes background.m4a (scene audio minus dialogue). */
+  hasBackground?: boolean;
+  /** True when the pack includes vocals.m4a (dialogue only). */
+  hasVocals?: boolean;
   characters: Character[];
   lines: CueLine[];
 };

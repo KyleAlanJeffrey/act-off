@@ -21,8 +21,11 @@
 // Output: public/scenes/<id>/{clip.mp4, original.m4a, cues.json}
 // and registers the id in public/scenes/index.json.
 import { execFileSync } from "node:child_process";
-import { mkdirSync, writeFileSync, readFileSync, existsSync } from "node:fs";
+import {
+  mkdirSync, writeFileSync, readFileSync, existsSync, readdirSync, rmSync, mkdtempSync,
+} from "node:fs";
 import { join, dirname } from "node:path";
+import { tmpdir } from "node:os";
 import { fileURLToPath } from "node:url";
 
 const fail = (msg) => {
@@ -126,6 +129,93 @@ const durationMs = Math.round(
   ) * 1000
 );
 
+// ---- Dialogue/background separation ----------------------------------------
+// Goal: a background.m4a (music/ambience, no dialogue) so the screening can lay
+// player takes over the real scene atmosphere, plus a vocals.m4a used as the
+// fallback for lines the player never recorded.
+// Strategy: 5.1+ sources carry dialogue in the center channel — drop it (free,
+// excellent). Stereo sources need demucs (AI separation) if installed.
+let hasBackground = false;
+let hasVocals = false;
+
+const [channelsRaw, layoutRaw] = execFileSync("ffprobe", [
+  "-v", "error", "-select_streams", "a:0",
+  "-show_entries", "stream=channels,channel_layout",
+  "-of", "default=noprint_wrappers=1:nokey=1", videoFile,
+]).toString().trim().split("\n");
+const channels = parseInt(channelsRaw, 10);
+const layout = (layoutRaw ?? "").trim();
+
+// Surround channel names differ per layout; referencing an absent name errors.
+const SURROUND_NAMES = {
+  "5.1": ["BL", "BR"],
+  "5.1(back)": ["BL", "BR"],
+  "5.1(side)": ["SL", "SR"],
+  "6.1": ["BL", "BR"],
+  "7.1": ["BL", "BR", "SL", "SR"],
+  "7.1(wide)": ["BL", "BR", "SL", "SR"],
+}[layout];
+
+const hasDemucs = (() => {
+  try {
+    execFileSync("demucs", ["--help"], { stdio: "ignore" });
+    return true;
+  } catch {
+    return false;
+  }
+})();
+
+if (channels >= 5 && SURROUND_NAMES) {
+  // Surround source: dialogue lives in the center channel. Background =
+  // downmix of everything except FC; vocals = FC alone. Named channel
+  // selectors resolve via the stream's layout, immune to codec channel order.
+  console.log(`Separating dialogue via center channel (${layout} source)…`);
+  const backs = SURROUND_NAMES.filter((c) => c.endsWith("L"));
+  const rights = SURROUND_NAMES.filter((c) => c.endsWith("R"));
+  const left = ["FL", ...backs.map((c) => `0.7*${c}`), "0.5*LFE"].join("+");
+  const right = ["FR", ...rights.map((c) => `0.7*${c}`), "0.5*LFE"].join("+");
+  execFileSync("ffmpeg", [
+    "-y", ...trimArgs, "-i", videoFile, "-vn",
+    "-af", `pan=stereo|c0=${left}|c1=${right}`,
+    "-c:a", "aac", "-b:a", "128k", join(outDir, "background.m4a"),
+  ], { stdio: ["ignore", "ignore", "inherit"] });
+  execFileSync("ffmpeg", [
+    "-y", ...trimArgs, "-i", videoFile, "-vn",
+    "-af", "pan=mono|c0=FC",
+    "-c:a", "aac", "-b:a", "96k", join(outDir, "vocals.m4a"),
+  ], { stdio: ["ignore", "ignore", "inherit"] });
+  hasBackground = hasVocals = true;
+} else if (hasDemucs) {
+  console.log("Separating dialogue with demucs (stereo source) — this takes a while…");
+  const sepTmp = mkdtempSync(join(tmpdir(), "act-off-demucs-"));
+  try {
+    execFileSync("demucs", [
+      "--two-stems=vocals", "-o", sepTmp, join(outDir, "original.m4a"),
+    ], { stdio: ["ignore", "ignore", "inherit"] });
+    // Output lands at <sepTmp>/<model>/<basename>/{vocals,no_vocals}.wav
+    const model = readdirSync(sepTmp)[0];
+    const stemDir = join(sepTmp, model, "original");
+    execFileSync("ffmpeg", [
+      "-y", "-i", join(stemDir, "no_vocals.wav"),
+      "-c:a", "aac", "-b:a", "128k", join(outDir, "background.m4a"),
+    ], { stdio: "ignore" });
+    execFileSync("ffmpeg", [
+      "-y", "-i", join(stemDir, "vocals.wav"),
+      "-c:a", "aac", "-b:a", "96k", join(outDir, "vocals.m4a"),
+    ], { stdio: "ignore" });
+    hasBackground = hasVocals = true;
+  } finally {
+    rmSync(sepTmp, { recursive: true, force: true });
+  }
+} else {
+  console.warn(
+    `⚠ No background separation: source audio is ${channels}ch (${layout || "unknown layout"}) ` +
+    "and demucs is not installed.\n" +
+    "  The screening will play the original audio between lines instead.\n" +
+    "  For a dialogue-free background: pipx install demucs (or pip3 install demucs), then rebuild."
+  );
+}
+
 // Line timings must land inside the trimmed clip
 for (const l of pack.lines) {
   const s = l.startMs - trimStart;
@@ -145,6 +235,8 @@ writeFileSync(
       title: pack.title,
       tagline: pack.tagline ?? "",
       durationMs,
+      hasBackground,
+      hasVocals,
       characters: pack.characters.map(({ id, name, emoji }) => ({ id, name, emoji })),
       lines: sorted.map((l, i) => ({
         index: i,

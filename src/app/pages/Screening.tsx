@@ -1,24 +1,34 @@
 import { useEffect, useRef, useState } from "react";
 import type { Scene, Take } from "../types";
 import { sceneAssetUrl } from "../types";
-import { scheduleScreening } from "../lib/audio";
+import { audioCtx, scheduleScreening } from "../lib/audio";
 import { BgBlobs, Card, Chip, Icon, NeonButton } from "../components/ui";
 
 type Props = {
   scene: Scene;
   originalBuffer: AudioBuffer;
+  backgroundBuffer: AudioBuffer | null;
+  vocalsBuffer: AudioBuffer | null;
   takes: Map<number, Take>;
   onBackToStudio: () => void;
   onNewScene: () => void;
 };
 
-export default function Screening({ scene, originalBuffer, takes, onBackToStudio, onNewScene }: Props) {
+export default function Screening({
+  scene,
+  originalBuffer,
+  backgroundBuffer,
+  vocalsBuffer,
+  takes,
+  onBackToStudio,
+  onNewScene,
+}: Props) {
   const videoRef = useRef<HTMLVideoElement>(null);
   const mixRef = useRef<{ stop: () => void } | null>(null);
   const [playing, setPlaying] = useState(false);
   const [ended, setEnded] = useState(false);
   const [timeMs, setTimeMs] = useState(0);
-  const rafRef = useRef(0);
+  const tickRef = useRef(0);
 
   const activeLine = scene.lines.find((l) => timeMs >= l.startMs && timeMs <= l.endMs + 350);
   const activeCharacter = activeLine
@@ -29,7 +39,7 @@ export default function Screening({ scene, originalBuffer, takes, onBackToStudio
   const stop = () => {
     mixRef.current?.stop();
     mixRef.current = null;
-    cancelAnimationFrame(rafRef.current);
+    clearInterval(tickRef.current);
     const v = videoRef.current;
     if (v) {
       v.pause();
@@ -47,26 +57,36 @@ export default function Screening({ scene, originalBuffer, takes, onBackToStudio
     const v = videoRef.current;
     if (!v) return;
     v.currentTime = 0;
-    mixRef.current = scheduleScreening(
-      originalBuffer,
-      scene.lines.map((l) => ({
+    const mix = scheduleScreening({
+      original: originalBuffer,
+      background: backgroundBuffer ?? undefined,
+      vocals: vocalsBuffer ?? undefined,
+      durationMs: scene.durationMs,
+      lines: scene.lines.map((l) => ({
         startMs: l.startMs,
         endMs: l.endMs,
         take: takes.get(l.index)?.buffer,
-      }))
-    );
-    await v.play();
+      })),
+    });
+    mixRef.current = mix;
+    // The video is decoration — if the browser refuses to play it (power
+    // saving, autoplay policy), the premiere still runs on the audio clock.
+    v.play().catch(() => {});
     setPlaying(true);
-    const tick = () => {
-      setTimeMs(v.currentTime * 1000);
-      rafRef.current = requestAnimationFrame(tick);
-    };
-    rafRef.current = requestAnimationFrame(tick);
+    const ac = audioCtx();
+    // Interval (not rAF): keeps ticking when the tab is hidden, and the audio
+    // clock keeps the timeline exact regardless of tick cadence.
+    tickRef.current = window.setInterval(() => {
+      const ms = (ac.currentTime - mix.startTime) * 1000;
+      setTimeMs(Math.max(0, ms));
+      if (ms >= scene.durationMs + 150) handleEnded();
+    }, 100);
   };
 
   const handleEnded = () => {
     mixRef.current = null;
-    cancelAnimationFrame(rafRef.current);
+    clearInterval(tickRef.current);
+    videoRef.current?.pause();
     setPlaying(false);
     setEnded(true);
   };
@@ -95,7 +115,6 @@ export default function Screening({ scene, originalBuffer, takes, onBackToStudio
               muted
               playsInline
               preload="auto"
-              onEnded={handleEnded}
               className="w-full rounded-md border-2 border-outline-variant"
             />
 
