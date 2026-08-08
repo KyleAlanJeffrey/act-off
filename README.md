@@ -81,11 +81,11 @@ Voicer uses with its community dub packs. Your media never enters git (ignored b
 2. Draft the line list **from subtitles** — no hand-scrubbing timings:
 
 ```bash
-npm run scene:subs -- ~/Movies/your-clip.mp4 scenes/packs/my-scene.json
+npm run scene:subs -- ~/Movies/your-clip.mp4 ~/Movies/your-subs.srt scenes/packs/my-scene.json
 ```
 
-   Works on `.srt`/`.vtt` files directly or extracts the video's embedded subtitle
-   track. Speaker prefixes ("VADER: …", "- LEIA: …") become characters automatically;
+   Pass a video + `.srt`/`.vtt` (external subs win), a video alone (extracts its
+   embedded subtitle track), or a subtitle file alone. Speaker prefixes ("VADER: …", "- LEIA: …") become characters automatically;
    dual-speaker cues are split. Then edit the draft: assign any `FILL_IN` lines,
    delete lines you don't want, set `id`/`title`.
    (No subs? Copy [scenes/packs/star-wars-turned-her.example.json](scenes/packs/star-wars-turned-her.example.json)

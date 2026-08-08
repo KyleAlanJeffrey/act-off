@@ -1,6 +1,11 @@
 // Drafts a pack.json from subtitles, so you never hand-scrub line timings.
 //
-//   npm run scene:subs -- <video-or-subtitle-file> [output-pack.json]
+//   npm run scene:subs -- <video-or-subtitle-file> [subtitle-file] [output-pack.json]
+//
+//   npm run scene:subs -- clip.mp4                      # embedded subtitle track
+//   npm run scene:subs -- clip.mp4 subs.srt             # external subs for that video
+//   npm run scene:subs -- subs.srt                      # subtitle file alone
+//   npm run scene:subs -- clip.mp4 subs.srt out.json    # custom output path
 //
 // - .srt / .vtt files are parsed directly
 // - video files get their first embedded subtitle track extracted (ffmpeg)
@@ -18,9 +23,21 @@ const fail = (msg) => {
   process.exit(1);
 };
 
-const [input, outArg] = process.argv.slice(2);
-if (!input) fail("Usage: npm run scene:subs -- <video-or-subtitle-file> [output-pack.json]");
+const isSubFile = (p) => /\.(srt|vtt)$/i.test(p ?? "");
+
+const args = process.argv.slice(2);
+if (args.length === 0) {
+  fail("Usage: npm run scene:subs -- <video-or-subtitle-file> [subtitle-file] [output-pack.json]");
+}
+// When both a video and a subtitle file are given, the subs win (in any order);
+// the video is only the extraction source when no subtitle file is present.
+const subArg = args.find(isSubFile);
+const videoArg = args.find((a) => !isSubFile(a) && !a.endsWith(".json"));
+const outArg = args.find((a) => a.endsWith(".json"));
+const input = subArg ?? videoArg;
+if (!input) fail("Pass a video and/or a .srt/.vtt file.");
 if (!existsSync(input)) fail(`File not found: ${input}`);
+if (videoArg && !existsSync(videoArg)) fail(`File not found: ${videoArg}`);
 
 const outFile = outArg ?? "scenes/packs/draft.json";
 
@@ -132,4 +149,4 @@ const draft = {
 writeFileSync(outFile, JSON.stringify(draft, null, 2));
 console.log(`✓ Drafted ${outFile} — ${lines.length} lines, ${characters.size} detected speaker(s)`);
 console.log("  Next: edit it (characters, line selection, id/title/trim), then");
-console.log(`  npm run scene:pack -- <video-file> ${outFile}`);
+console.log(`  npm run scene:pack -- ${videoArg ?? "<video-file>"} ${outFile}`);
