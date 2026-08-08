@@ -35,6 +35,28 @@ export default function SceneSelect({ scenes, mic, onMicReady, onPick, onBack }:
     }
   };
 
+  // If the browser already granted mic access on a previous visit, open the
+  // session immediately instead of making the player click the button again.
+  useEffect(() => {
+    if (mic) return;
+    let cancelled = false;
+    (async () => {
+      try {
+        const status = await navigator.permissions.query({
+          name: "microphone" as PermissionName,
+        });
+        if (status.state === "granted" && !cancelled) {
+          onMicReady(await MicSession.open());
+        }
+      } catch {
+        // Permissions API unavailable (or query unsupported) — keep the button.
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [mic]);
+
   return (
     <div className="min-h-screen p-8 relative">
       <BgBlobs />
