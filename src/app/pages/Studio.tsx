@@ -28,6 +28,7 @@ export default function Studio({ scene, originalBuffer, mic, takes, onTake, onWr
   const [takeProgress, setTakeProgress] = useState(0);
   const [micLevel, setMicLevel] = useState(0);
   const [elapsedMs, setElapsedMs] = useState(0);
+  const [liveLevels, setLiveLevels] = useState<number[]>([]);
 
   const playerRef = useRef<{ stop: () => void } | null>(null);
   const timersRef = useRef<number[]>([]);
@@ -55,13 +56,30 @@ export default function Studio({ scene, originalBuffer, mic, takes, onTake, onWr
     timersRef.current = [];
   };
 
+  const pauseVideo = () => {
+    const v = videoRef.current;
+    if (v) {
+      v.pause();
+      v.currentTime = line.startMs / 1000;
+    }
+  };
+
   const stopAll = () => {
     playerRef.current?.stop();
     playerRef.current = null;
     clearTimers();
+    pauseVideo();
     setOrigProgress(0);
     setTakeProgress(0);
     setTransport({ kind: "idle" });
+  };
+
+  /** Plays the muted clip alongside whatever audio is being auditioned. */
+  const rollVideo = () => {
+    const v = videoRef.current;
+    if (!v) return;
+    v.currentTime = line.startMs / 1000;
+    v.play().catch(() => {});
   };
 
   useEffect(() => () => stopAll(), []);
@@ -77,11 +95,15 @@ export default function Studio({ scene, originalBuffer, mic, takes, onTake, onWr
   const playOriginal = () => {
     stopAll();
     setTransport({ kind: "playingOriginal" });
+    rollVideo();
     playerRef.current = playSegment(originalBuffer, {
       startMs: line.startMs,
       endMs: line.endMs,
       onProgress: setOrigProgress,
-      onEnded: () => setTransport({ kind: "idle" }),
+      onEnded: () => {
+        pauseVideo();
+        setTransport({ kind: "idle" });
+      },
     });
   };
 
@@ -89,9 +111,13 @@ export default function Studio({ scene, originalBuffer, mic, takes, onTake, onWr
     if (!take?.buffer) return;
     stopAll();
     setTransport({ kind: "playingTake" });
+    rollVideo();
     playerRef.current = playSegment(take.buffer, {
       onProgress: setTakeProgress,
-      onEnded: () => setTransport({ kind: "idle" }),
+      onEnded: () => {
+        pauseVideo();
+        setTransport({ kind: "idle" });
+      },
     });
   };
 
@@ -109,23 +135,27 @@ export default function Studio({ scene, originalBuffer, mic, takes, onTake, onWr
       mic.startRecording();
       const startedAt = performance.now();
       setTransport({ kind: "recording", startedAt });
+      setLiveLevels([]);
       const meter = window.setInterval(() => {
-        setMicLevel(mic.level());
+        const level = mic.level();
+        setMicLevel(level);
+        setLiveLevels((prev) => [...prev, level]);
         const el = performance.now() - startedAt;
         setElapsedMs(el);
-        if (el >= capMs) void finishRecording(startedAt);
+        if (el >= capMs) void finishRecording();
       }, 50);
       timersRef.current.push(meter);
-    }, 700);
+    }, 300);
     timersRef.current.push(interval);
   };
 
-  const finishRecording = async (_startedAt: number) => {
+  const finishRecording = async () => {
     clearTimers();
     setTransport({ kind: "idle" });
     setElapsedMs(0);
     const blob = await mic.stopRecording();
     const buffer = await blobToAudioBuffer(blob);
+    setLiveLevels([]);
     onTake(line.index, { lineIndex: line.index, state: "recorded", blob, buffer });
   };
 
@@ -209,65 +239,70 @@ export default function Studio({ scene, originalBuffer, mic, takes, onTake, onWr
             “{line.text}”
           </p>
 
-          {/* Original */}
+          {/* Dub lane: original on top, your take mirrored below */}
           <div className="flex flex-col gap-2">
-            <div className="flex items-center justify-between">
+            <div className="flex items-center justify-between flex-wrap gap-2">
               <p className="text-xs font-bold uppercase tracking-widest text-on-surface-variant">
-                Original delivery · {(lineDurMs / 1000).toFixed(1)}s
+                <span className="text-secondary-container">▲ Original</span>
+                {" · "}
+                <span className="text-primary">▼ Your take</span>
+                {" · "}{(lineDurMs / 1000).toFixed(1)}s
               </p>
-              <button
-                onClick={transport.kind === "playingOriginal" ? stopAll : playOriginal}
-                className="text-secondary-container flex items-center gap-1 text-sm font-bold uppercase tracking-wider cursor-pointer hover:opacity-80"
-              >
-                <Icon name={transport.kind === "playingOriginal" ? "stop_circle" : "play_circle"} className="text-2xl" />
-                {transport.kind === "playingOriginal" ? "Stop" : "Listen"}
-              </button>
-            </div>
-            <div className="bg-surface-container-low rounded-md border-2 border-outline-variant p-3">
-              <Waveform
-                buffer={originalBuffer}
-                startMs={line.startMs}
-                endMs={line.endMs}
-                progress={origProgress}
-                color="#00eefc"
-                dimColor="#313153"
-              />
-            </div>
-          </div>
-
-          {/* Your take */}
-          <div className="flex flex-col gap-2">
-            <div className="flex items-center justify-between">
-              <p className="text-xs font-bold uppercase tracking-widest text-on-surface-variant">Your take</p>
-              {take?.buffer && !isRecording && (
+              <div className="flex items-center gap-4">
                 <button
-                  onClick={transport.kind === "playingTake" ? stopAll : playTake}
-                  className="text-primary flex items-center gap-1 text-sm font-bold uppercase tracking-wider cursor-pointer hover:opacity-80"
+                  onClick={transport.kind === "playingOriginal" ? stopAll : playOriginal}
+                  disabled={isRecording || isCountdown}
+                  className="text-secondary-container flex items-center gap-1 text-sm font-bold uppercase tracking-wider cursor-pointer hover:opacity-80 disabled:opacity-30"
                 >
-                  <Icon name={transport.kind === "playingTake" ? "stop_circle" : "play_circle"} className="text-2xl" />
-                  {transport.kind === "playingTake" ? "Stop" : "Play my take"}
+                  <Icon name={transport.kind === "playingOriginal" ? "stop_circle" : "play_circle"} className="text-2xl" />
+                  {transport.kind === "playingOriginal" ? "Stop" : "Listen"}
                 </button>
-              )}
+                {take?.buffer && (
+                  <button
+                    onClick={transport.kind === "playingTake" ? stopAll : playTake}
+                    disabled={isRecording || isCountdown}
+                    className="text-primary flex items-center gap-1 text-sm font-bold uppercase tracking-wider cursor-pointer hover:opacity-80 disabled:opacity-30"
+                  >
+                    <Icon name={transport.kind === "playingTake" ? "stop_circle" : "play_circle"} className="text-2xl" />
+                    {transport.kind === "playingTake" ? "Stop" : "Play my take"}
+                  </button>
+                )}
+              </div>
             </div>
             <div
               className={`bg-surface-container-low rounded-md border-2 p-3 transition-colors ${
                 isRecording ? "border-error glow-error" : "border-outline-variant"
               }`}
             >
-              {isRecording ? (
-                <div className="h-16 flex items-center justify-center gap-4">
+              <Waveform
+                original={originalBuffer}
+                startMs={line.startMs}
+                endMs={line.endMs}
+                take={isRecording ? null : take?.buffer}
+                liveLevels={isRecording ? liveLevels : null}
+                playheadMs={
+                  transport.kind === "playingOriginal"
+                    ? origProgress * lineDurMs
+                    : transport.kind === "playingTake" && take?.buffer
+                      ? takeProgress * take.buffer.duration * 1000
+                      : isRecording
+                        ? elapsedMs
+                        : null
+                }
+              />
+              {isRecording && (
+                <div className="flex items-center justify-center gap-4 mt-2">
                   <span className="w-3 h-3 rounded-full bg-error animate-pulse" />
                   <LevelMeter level={micLevel} />
                   <span className="font-display font-bold text-error tabular-nums">
                     {(elapsedMs / 1000).toFixed(1)}s / {(capMs / 1000).toFixed(1)}s
                   </span>
                 </div>
-              ) : take?.buffer ? (
-                <Waveform buffer={take.buffer} progress={takeProgress} color="#ecb2ff" dimColor="#313153" />
-              ) : (
-                <div className="h-16 flex items-center justify-center text-on-surface-variant text-sm">
-                  No take yet — smash that record button.
-                </div>
+              )}
+              {!isRecording && !take?.buffer && (
+                <p className="text-center text-on-surface-variant text-sm mt-2">
+                  Record over the original — your voice fills the bottom half.
+                </p>
               )}
             </div>
           </div>
@@ -275,7 +310,7 @@ export default function Studio({ scene, originalBuffer, mic, takes, onTake, onWr
           {/* Transport */}
           <div className="flex items-center justify-center gap-4 pt-2">
             {isRecording ? (
-              <NeonButton variant="danger" onClick={() => void finishRecording(0)} className="py-4 px-10 text-base">
+              <NeonButton variant="danger" onClick={() => void finishRecording()} className="py-4 px-10 text-base">
                 <Icon name="stop" className="text-2xl" /> Stop
               </NeonButton>
             ) : (
