@@ -81,7 +81,11 @@ export default function App() {
       );
     case "cast":
       return scene ? (
-        <CastingSplash scene={scene} onContinue={() => setPhase("studio")} />
+        <CastingSplash
+          scene={scene}
+          ready={originalBuffer !== null}
+          onContinue={() => setPhase("studio")}
+        />
       ) : null;
     case "studio":
       return scene && originalBuffer && mic ? (

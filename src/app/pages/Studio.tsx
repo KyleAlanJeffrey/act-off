@@ -135,9 +135,9 @@ export default function Studio({ scene, originalBuffer, mic, takes, onTake, onWr
   return (
     <div className="min-h-screen p-6 relative">
       <BgBlobs />
-      <main className="relative z-10 max-w-7xl mx-auto grid grid-cols-[260px_1fr_300px] gap-6 items-start">
+      <main className="relative z-10 max-w-7xl mx-auto grid grid-cols-1 lg:grid-cols-[260px_1fr_300px] gap-6 items-start">
         {/* Left rail — line checklist */}
-        <Card className="p-4 flex flex-col gap-4 sticky top-6">
+        <Card className="p-4 flex flex-col gap-4 lg:sticky top-6 order-2 lg:order-none">
           <div className="flex items-center justify-between">
             <p className="font-bold text-xs uppercase tracking-widest text-on-surface-variant">Your lines</p>
             <Chip color={allDone ? "lime" : "cyan"}>{recordedCount}/{scene.lines.length}</Chip>
@@ -187,7 +187,7 @@ export default function Studio({ scene, originalBuffer, mic, takes, onTake, onWr
         </Card>
 
         {/* Center — focused line */}
-        <Card active className="p-8 flex flex-col gap-6 relative overflow-hidden">
+        <Card active className="p-6 md:p-8 flex flex-col gap-6 relative overflow-hidden order-1 lg:order-none">
           {isCountdown && (
             <div className="absolute inset-0 z-20 bg-background/80 backdrop-blur-sm flex items-center justify-center">
               <span className="font-display font-extrabold text-9xl text-secondary-container animate-ping-slow">
@@ -305,7 +305,7 @@ export default function Studio({ scene, originalBuffer, mic, takes, onTake, onWr
         </Card>
 
         {/* Right rail — scene context */}
-        <Card className="p-4 flex flex-col gap-4 sticky top-6">
+        <Card className="p-4 flex flex-col gap-4 lg:sticky top-6 order-3 lg:order-none">
           <p className="font-bold text-xs uppercase tracking-widest text-on-surface-variant">
             {scene.title}
           </p>

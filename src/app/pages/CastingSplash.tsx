@@ -4,9 +4,12 @@ import { BgBlobs, Card, Chip, Icon, NeonButton } from "../components/ui";
 
 export default function CastingSplash({
   scene,
+  ready,
   onContinue,
 }: {
   scene: Scene;
+  /** False while the scene's original audio is still decoding. */
+  ready: boolean;
   onContinue: () => void;
 }) {
   const [revealed, setRevealed] = useState(0);
@@ -68,10 +71,18 @@ export default function CastingSplash({
         <NeonButton
           variant="tertiary"
           onClick={onContinue}
-          disabled={!allRevealed}
+          disabled={!allRevealed || !ready}
           className="py-4 px-10 text-base"
         >
-          To the studio <Icon name="arrow_forward" />
+          {ready ? (
+            <>
+              To the studio <Icon name="arrow_forward" />
+            </>
+          ) : (
+            <>
+              <Icon name="hourglass_top" /> Loading the scene…
+            </>
+          )}
         </NeonButton>
       </main>
     </div>
