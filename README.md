@@ -25,8 +25,16 @@ so it's also the first-playable milestone.
 
 ## Status
 
-Pre-code: architecture, page specs, and design reference are done; implementation hasn't
-started.
+**Solo Show is playable.** Landing → mic check → scene select → casting → recording studio
+(per-line waveforms, 3-2-1 countdown, retakes) → synced dubbed screening. Runs fully
+client-side. Party mode (lobby + Favorite Voice voting) is next — the Worker/API
+scaffolding is in place, the Durable Object isn't built yet.
+
+```bash
+npm install
+npm run dev        # local dev (Vite + Workers runtime)
+npm run deploy     # build + wrangler deploy
+```
 
 ## Docs
 
@@ -57,8 +65,26 @@ borders and neon glows instead of shadows. Type: **Syne** (display) + **Quicksan
 - `MediaRecorder` for capture, Web Audio for sample-accurate synced screening
 - **D1** (later) for the persistent scene library; optional Workers AI "judge"
 
-## Scene content
+## Scene content — adding famous movie scenes
 
-Scenes are "dub packs": `clip.mp4` + `original.ogg` + `cues.json` (per-line character,
-text, and start/end timings). No copyrighted clips ship with the game — public-domain
-scenes plus user-made private packs, same approach The Choicer Voicer uses.
+Scenes are "dub packs" under `public/scenes/<id>/`: `clip.mp4` + `original.m4a` +
+`cues.json` (per-line character, text, start/end timings), listed in
+`public/scenes/index.json`. The repo ships one original demo pack ("The Last Slice",
+generated with macOS `say` + ffmpeg via `npm run scene:demo`).
+
+Famous movie scenes work the same way — you supply the clip, same approach The Choicer
+Voicer uses with its community dub packs. Your media never enters git (ignored by
+`.gitignore`):
+
+1. Get the scene as a video file on disk (e.g. your clip of the *Revenge of the Sith*
+   "You turned her against me!" scene).
+2. Copy [scenes/packs/star-wars-turned-her.example.json](scenes/packs/star-wars-turned-her.example.json)
+   → fill in the real line text and start/end timings (scrub the clip in QuickTime/VLC).
+3. Build it:
+
+```bash
+npm run scene:pack -- ~/Movies/your-clip.mp4 scenes/packs/star-wars-turned-her.json
+```
+
+4. Refresh — the scene appears in the picker. `trim.startMs/endMs` cuts extra footage;
+   line timings auto-shift.
