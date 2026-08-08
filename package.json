@@ -9,7 +9,8 @@
     "preview": "vite preview",
     "deploy": "npm run build && wrangler deploy",
     "scene:demo": "node scenes/build-demo.mjs",
-    "scene:pack": "node scenes/build-pack.mjs"
+    "scene:pack": "node scenes/build-pack.mjs",
+    "scene:subs": "node scenes/subs-to-pack.mjs"
   },
   "dependencies": {
     "react": "^19.1.0",

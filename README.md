@@ -78,12 +78,22 @@ Voicer uses with its community dub packs. Your media never enters git (ignored b
 
 1. Get the scene as a video file on disk (e.g. your clip of the *Revenge of the Sith*
    "You turned her against me!" scene).
-2. Copy [scenes/packs/star-wars-turned-her.example.json](scenes/packs/star-wars-turned-her.example.json)
-   → fill in the real line text and start/end timings (scrub the clip in QuickTime/VLC).
+2. Draft the line list **from subtitles** — no hand-scrubbing timings:
+
+```bash
+npm run scene:subs -- ~/Movies/your-clip.mp4 scenes/packs/my-scene.json
+```
+
+   Works on `.srt`/`.vtt` files directly or extracts the video's embedded subtitle
+   track. Speaker prefixes ("VADER: …", "- LEIA: …") become characters automatically;
+   dual-speaker cues are split. Then edit the draft: assign any `FILL_IN` lines,
+   delete lines you don't want, set `id`/`title`.
+   (No subs? Copy [scenes/packs/star-wars-turned-her.example.json](scenes/packs/star-wars-turned-her.example.json)
+   and fill in timings by scrubbing in QuickTime/VLC.)
 3. Build it:
 
 ```bash
-npm run scene:pack -- ~/Movies/your-clip.mp4 scenes/packs/star-wars-turned-her.json
+npm run scene:pack -- ~/Movies/your-clip.mp4 scenes/packs/my-scene.json
 ```
 
 4. Refresh — the scene appears in the picker. `trim.startMs/endMs` cuts extra footage;
