@@ -38,7 +38,8 @@ export default function Studio({ scene, originalBuffer, mic, takes, onTake, onWr
   const character = scene.characters.find((c) => c.id === line.characterId)!;
   const take = takes.get(line.index);
   const lineDurMs = line.endMs - line.startMs;
-  const capMs = lineDurMs * 2 + 2000;
+  // A take can never run longer than the original line
+  const capMs = lineDurMs;
   const recordedCount = scene.lines.filter((l) => takes.get(l.index)?.buffer).length;
   const allDone = recordedCount === scene.lines.length;
 
@@ -133,6 +134,7 @@ export default function Studio({ scene, originalBuffer, mic, takes, onTake, onWr
       }
       clearTimers();
       mic.startRecording();
+      rollVideo(); // act along to the picture
       const startedAt = performance.now();
       setTransport({ kind: "recording", startedAt });
       setLiveLevels([]);
@@ -151,6 +153,7 @@ export default function Studio({ scene, originalBuffer, mic, takes, onTake, onWr
 
   const finishRecording = async () => {
     clearTimers();
+    pauseVideo();
     setTransport({ kind: "idle" });
     setElapsedMs(0);
     const blob = await mic.stopRecording();
@@ -165,7 +168,7 @@ export default function Studio({ scene, originalBuffer, mic, takes, onTake, onWr
   return (
     <div className="min-h-screen p-6 relative">
       <BgBlobs />
-      <main className="relative z-10 max-w-7xl mx-auto grid grid-cols-1 lg:grid-cols-[260px_1fr_300px] gap-6 items-start">
+      <main className="relative z-10 max-w-5xl mx-auto grid grid-cols-1 lg:grid-cols-[280px_1fr] gap-6 items-start">
         {/* Left rail — line checklist */}
         <Card className="p-4 flex flex-col gap-4 lg:sticky top-6 order-2 lg:order-none">
           <div className="flex items-center justify-between">
@@ -235,9 +238,37 @@ export default function Studio({ scene, originalBuffer, mic, takes, onTake, onWr
             </span>
           </div>
 
-          <p className="font-display font-bold text-3xl md:text-4xl leading-snug text-center py-4">
+          <p className="font-display font-bold text-3xl md:text-4xl leading-snug text-center py-2">
             “{line.text}”
           </p>
+
+          {/* The scene — plays along while you listen and record */}
+          <div className="flex flex-col gap-2">
+            <video
+              ref={videoRef}
+              src={sceneAssetUrl(scene.id, "clip.mp4")}
+              muted
+              playsInline
+              preload="auto"
+              className="w-full rounded-md border-2 border-outline-variant"
+            />
+            <div className="relative h-3 bg-surface-container-lowest rounded-full border-2 border-outline-variant">
+              {scene.lines.map((l) => (
+                <button
+                  key={l.index}
+                  onClick={() => focusLine(l.index)}
+                  title={l.text}
+                  className={`absolute top-0 h-full rounded-full cursor-pointer transition-colors ${
+                    l.index === focused ? "bg-secondary-container" : takes.get(l.index)?.buffer ? "bg-tertiary/70" : "bg-outline-variant"
+                  }`}
+                  style={{
+                    left: `${(l.startMs / scene.durationMs) * 100}%`,
+                    width: `${Math.max(2, ((l.endMs - l.startMs) / scene.durationMs) * 100)}%`,
+                  }}
+                />
+              ))}
+            </div>
+          </div>
 
           {/* Dub lane: original on top, your take mirrored below */}
           <div className="flex flex-col gap-2">
@@ -339,40 +370,6 @@ export default function Studio({ scene, originalBuffer, mic, takes, onTake, onWr
           </div>
         </Card>
 
-        {/* Right rail — scene context */}
-        <Card className="p-4 flex flex-col gap-4 lg:sticky top-6 order-3 lg:order-none">
-          <p className="font-bold text-xs uppercase tracking-widest text-on-surface-variant">
-            {scene.title}
-          </p>
-          <video
-            ref={videoRef}
-            src={sceneAssetUrl(scene.id, "clip.mp4")}
-            muted
-            playsInline
-            preload="auto"
-            className="w-full rounded-md border-2 border-outline-variant"
-          />
-          <div className="relative h-3 bg-surface-container-lowest rounded-full border-2 border-outline-variant">
-            {scene.lines.map((l) => (
-              <button
-                key={l.index}
-                onClick={() => focusLine(l.index)}
-                title={l.text}
-                className={`absolute top-0 h-full rounded-full cursor-pointer transition-colors ${
-                  l.index === focused ? "bg-secondary-container" : takes.get(l.index)?.buffer ? "bg-tertiary/70" : "bg-outline-variant"
-                }`}
-                style={{
-                  left: `${(l.startMs / scene.durationMs) * 100}%`,
-                  width: `${Math.max(2, ((l.endMs - l.startMs) / scene.durationMs) * 100)}%`,
-                }}
-              />
-            ))}
-          </div>
-          <p className="text-xs text-on-surface-variant">
-            The focused line is <span className="text-secondary-container font-bold">cyan</span>; recorded lines turn{" "}
-            <span className="text-tertiary font-bold">lime</span>. Take your time — solo shows have no clock.
-          </p>
-        </Card>
       </main>
     </div>
   );
