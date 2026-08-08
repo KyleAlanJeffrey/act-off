@@ -16,6 +16,8 @@ export type Scene = {
   id: string;
   title: string;
   tagline: string;
+  /** Optional provenance link (e.g. the YouTube video the clip came from). */
+  sourceUrl?: string;
   durationMs: number;
   /** True when the pack includes background.m4a (scene audio minus dialogue). */
   hasBackground?: boolean;

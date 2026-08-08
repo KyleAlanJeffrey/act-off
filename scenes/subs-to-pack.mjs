@@ -141,6 +141,7 @@ const draft = {
   id: "FILL-IN-scene-id",
   title: "FILL IN: Scene Title",
   tagline: "",
+  sourceUrl: "",
   trim: { startMs: lines[0].startMs > 3000 ? lines[0].startMs - 2000 : 0, endMs: null },
   characters: [...characters].map(([id, name]) => ({ id, name, emoji: "🎭" })),
   lines,

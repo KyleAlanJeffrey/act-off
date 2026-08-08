@@ -77,6 +77,16 @@ export default function SceneSelect({ scenes, mic, onMicReady, onPick, onBack }:
           {micError && <p className="w-full text-error text-sm font-bold">{micError}</p>}
         </Card>
 
+        {scenes.length === 0 && (
+          <Card className="p-6 text-center">
+            <p className="font-bold">No scenes built yet.</p>
+            <p className="text-sm text-on-surface-variant mt-2">
+              Build one from a clip on this machine:{" "}
+              <code className="text-secondary-container">npm run scene:pack -- clip.mp4 pack.json</code>{" "}
+              (see the README).
+            </p>
+          </Card>
+        )}
         <div className="grid md:grid-cols-3 gap-6">
           {scenes.map((scene) => (
             <SceneCard key={scene.id} scene={scene} locked={false} onPick={() => mic && onPick(scene)} dimmed={!mic} />
@@ -126,6 +136,17 @@ function SceneCard({
         </div>
         <h3 className="font-display font-bold text-xl uppercase leading-tight">{scene.title}</h3>
         <p className="text-sm text-on-surface-variant flex-1">{scene.tagline}</p>
+        {scene.sourceUrl && (
+          <a
+            href={scene.sourceUrl}
+            target="_blank"
+            rel="noreferrer"
+            onClick={(e) => e.stopPropagation()}
+            className="text-xs font-bold uppercase tracking-widest text-secondary-container hover:underline flex items-center gap-1 w-fit"
+          >
+            <Icon name="link" className="text-sm" /> Source
+          </a>
+        )}
         <div className="flex flex-wrap gap-2">
           {scene.characters.map((c) => (
             <Chip key={c.id} color="dim">

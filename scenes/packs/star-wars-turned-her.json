@@ -1,0 +1,114 @@
+{
+  "id": "star-wars-turned-her",
+  "title": "You Turned Her Against Me",
+  "tagline": "Anakin Skywalker and Obi-Wan Kenobi have a heated confrontation.",
+  "sourceUrl": "",
+  "trim": {
+    "startMs": 0,
+    "endMs": null
+  },
+  "characters": [
+    {
+      "id": "anakin",
+      "name": "Anakin Skywalker",
+      "emoji": "\ud83c\udfad"
+    },
+    {
+      "id": "obi-wan",
+      "name": "Obi-Wan Kenobi",
+      "emoji": "\ud83e\uddd9"
+    }
+  ],
+  "lines": [
+    {
+      "characterId": "anakin",
+      "text": "you turned her against me",
+      "startMs": 1540,
+      "endMs": 6620
+    },
+    {
+      "characterId": "obi-wan",
+      "text": "you have done that yourself",
+      "startMs": 6620,
+      "endMs": 14120
+    },
+    {
+      "characterId": "obi-wan",
+      "text": "you will not take it from me",
+      "startMs": 14120,
+      "endMs": 17450
+    },
+    {
+      "characterId": "obi-wan",
+      "text": "your anger and your lust for power have already done that",
+      "startMs": 17450,
+      "endMs": 20410
+    },
+    {
+      "characterId": "obi-wan",
+      "text": "you have allowed this Dark Lord to twist",
+      "startMs": 22750,
+      "endMs": 25390
+    },
+    {
+      "characterId": "obi-wan",
+      "text": "your mind until now so now you have",
+      "startMs": 25390,
+      "endMs": 29560
+    },
+    {
+      "characterId": "obi-wan",
+      "text": "become the very thing you swore to",
+      "startMs": 29560,
+      "endMs": 31090
+    },
+    {
+      "characterId": "anakin",
+      "text": "destroy don't lecture me obi-wan I see",
+      "startMs": 31090,
+      "endMs": 34930
+    },
+    {
+      "characterId": "anakin",
+      "text": "through the lies of the Jedi I do not",
+      "startMs": 34930,
+      "endMs": 38170
+    },
+    {
+      "characterId": "anakin",
+      "text": "fear the dark side as you do I have",
+      "startMs": 38170,
+      "endMs": 42610
+    },
+    {
+      "characterId": "anakin",
+      "text": "brought peace freedom justice and",
+      "startMs": 42610,
+      "endMs": 46000
+    },
+    {
+      "characterId": "anakin",
+      "text": "security to my new empire your new empire",
+      "startMs": 46000,
+      "endMs": 50590
+    },
+    {
+      "characterId": "anakin",
+      "text": "don't make me kill you Anakin my",
+      "startMs": 50590,
+      "endMs": 56980
+    },
+    {
+      "characterId": "obi-wan",
+      "text": "allegiance is to the Republic to",
+      "startMs": 56980,
+      "endMs": 59050
+    },
+    {
+      "characterId": "obi-wan",
+      "text": "democracy",
+      "startMs": 59050,
+      "endMs": 61200
+    }
+  ]
+}

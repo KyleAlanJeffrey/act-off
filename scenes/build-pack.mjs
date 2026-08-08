@@ -7,6 +7,7 @@
 //   "id": "star-wars-turned-her",
 //   "title": "You Turned Her Against Me",
 //   "tagline": "High ground negotiations break down.",
+//   "sourceUrl": "https://www.youtube.com/watch?v=...",  // optional provenance link
 //   "trim": { "startMs": 0, "endMs": 85000 },        // optional source cut
 //   "characters": [
 //     { "id": "anakin", "name": "Anakin", "emoji": "🔥" },
@@ -216,14 +217,21 @@ if (channels >= 5 && SURROUND_NAMES) {
   );
 }
 
-// Line timings must land inside the trimmed clip
+// Line timings must land inside the trimmed clip. Subtitle-sourced timings
+// often overshoot the clip edges by a hair — clamp small spills, fail big ones.
+const CLAMP_MS = 1500;
 for (const l of pack.lines) {
   const s = l.startMs - trimStart;
   const e = l.endMs - trimStart;
-  if (s < 0 || e > durationMs) {
+  if (s < -CLAMP_MS || e > durationMs + CLAMP_MS) {
     fail(
       `Line "${l.text}" (${l.startMs}..${l.endMs}ms) falls outside the trimmed clip (0..${durationMs}ms after trim). Check timings/trim.`
     );
+  }
+  if (s < 0 || e > durationMs) {
+    console.warn(`⚠ Clamped "${l.text}" to the clip edge (was ${s}..${e}ms, clip is ${durationMs}ms).`);
+    l.startMs = Math.max(l.startMs, trimStart);
+    l.endMs = Math.min(l.endMs, trimStart + durationMs);
   }
 }
 
@@ -234,6 +242,7 @@ writeFileSync(
       id: pack.id,
       title: pack.title,
       tagline: pack.tagline ?? "",
+      ...(pack.sourceUrl ? { sourceUrl: pack.sourceUrl } : {}),
       durationMs,
       hasBackground,
       hasVocals,

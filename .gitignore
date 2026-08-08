@@ -2,10 +2,13 @@
 node_modules/
 dist/
 .wrangler/
+*.tsbuildinfo
 
 # Scene media is user-supplied (movie clips) — keep it out of the public repo.
-# The built-in demo pack and the index are the only tracked scene assets.
+# Pack definitions (scenes/packs/*.json) and the scene index are tracked;
+# the transcoded media they produce is not.
 public/scenes/*
 !public/scenes/index.json
-!public/scenes/last-slice/
-*.tsbuildinfo
+
+# Raw source material (clips, subtitle rips)
+movies/

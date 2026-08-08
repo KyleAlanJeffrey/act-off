@@ -69,15 +69,17 @@ borders and neon glows instead of shadows. Type: **Syne** (display) + **Quicksan
 
 Scenes are "dub packs" under `public/scenes/<id>/`: `clip.mp4` + `original.m4a` +
 `cues.json` (per-line character, text, start/end timings), listed in
-`public/scenes/index.json`. The repo ships one original demo pack ("The Last Slice",
-generated with macOS `say` + ffmpeg via `npm run scene:demo`).
+`public/scenes/index.json`.
 
-Famous movie scenes work the same way — you supply the clip, same approach The Choicer
-Voicer uses with its community dub packs. Your media never enters git (ignored by
-`.gitignore`):
+The repo tracks **pack definitions** (`scenes/packs/*.json`) but never the media —
+clips, audio, and anything in `movies/` are gitignored, same approach The Choicer Voicer
+uses with its community dub packs. The reference example is the *Revenge of the Sith*
+["You turned her against me!" pack](scenes/packs/star-wars-turned-her.json); after
+cloning, point `scene:pack` at your own clip of the scene to build its media locally.
 
-1. Get the scene as a video file on disk (e.g. your clip of the *Revenge of the Sith*
-   "You turned her against me!" scene).
+1. Get the scene as a video file on disk (put it in `movies/`, which stays out of git).
+   If it came from YouTube, paste the link into the pack's `sourceUrl` — it shows as a
+   "Source" link on the scene card.
 2. Draft the line list **from subtitles** — no hand-scrubbing timings:
 
 ```bash
@@ -88,8 +90,8 @@ npm run scene:subs -- ~/Movies/your-clip.mp4 ~/Movies/your-subs.srt scenes/packs
    embedded subtitle track), or a subtitle file alone. Speaker prefixes ("VADER: …", "- LEIA: …") become characters automatically;
    dual-speaker cues are split. Then edit the draft: assign any `FILL_IN` lines,
    delete lines you don't want, set `id`/`title`.
-   (No subs? Copy [scenes/packs/star-wars-turned-her.example.json](scenes/packs/star-wars-turned-her.example.json)
-   and fill in timings by scrubbing in QuickTime/VLC.)
+   (No subs? Copy [scenes/packs/star-wars-turned-her.json](scenes/packs/star-wars-turned-her.json)
+   as a starting point and fill in timings by scrubbing in QuickTime/VLC.)
 3. Build it:
 
 ```bash

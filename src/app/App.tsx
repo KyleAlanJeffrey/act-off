@@ -24,13 +24,19 @@ export default function App() {
       const idx = await fetch("/scenes/index.json");
       if (!idx.ok) throw new Error(`scene index: ${idx.status}`);
       const ids = (await idx.json()) as string[];
-      return Promise.all(
+      // A scene whose media isn't built locally just gets skipped — the index
+      // is tracked in git, the media isn't.
+      const loaded = await Promise.all(
         ids.map(async (id) => {
-          const res = await fetch(sceneAssetUrl(id, "cues.json"));
-          if (!res.ok) throw new Error(`scene ${id}: ${res.status}`);
-          return (await res.json()) as Scene;
+          try {
+            const res = await fetch(sceneAssetUrl(id, "cues.json"));
+            return res.ok ? ((await res.json()) as Scene) : null;
+          } catch {
+            return null;
+          }
         })
       );
+      return loaded.filter((s): s is Scene => s !== null);
     })()
       .then(setScenes)
       .catch(() => setLoadError("Could not load the scene library."));
