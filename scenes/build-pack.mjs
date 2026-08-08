@@ -134,63 +134,34 @@ const durationMs = Math.round(
 // Goal: a background.m4a (music/ambience, no dialogue) so the screening can lay
 // player takes over the real scene atmosphere, plus a vocals.m4a used as the
 // fallback for lines the player never recorded.
-// Strategy: 5.1+ sources carry dialogue in the center channel — drop it (free,
-// excellent). Stereo sources need demucs (AI separation) if installed.
+// Demucs (AI source separation) does this well on stereo YouTube-style clips:
+// its "vocals" stem is the dialogue. Runs via a local install if present,
+// otherwise through uvx (cached, no permanent install).
 let hasBackground = false;
 let hasVocals = false;
 
-const [channelsRaw, layoutRaw] = execFileSync("ffprobe", [
-  "-v", "error", "-select_streams", "a:0",
-  "-show_entries", "stream=channels,channel_layout",
-  "-of", "default=noprint_wrappers=1:nokey=1", videoFile,
-]).toString().trim().split("\n");
-const channels = parseInt(channelsRaw, 10);
-const layout = (layoutRaw ?? "").trim();
-
-// Surround channel names differ per layout; referencing an absent name errors.
-const SURROUND_NAMES = {
-  "5.1": ["BL", "BR"],
-  "5.1(back)": ["BL", "BR"],
-  "5.1(side)": ["SL", "SR"],
-  "6.1": ["BL", "BR"],
-  "7.1": ["BL", "BR", "SL", "SR"],
-  "7.1(wide)": ["BL", "BR", "SL", "SR"],
-}[layout];
-
-const hasDemucs = (() => {
+const demucsCmd = (() => {
   try {
     execFileSync("demucs", ["--help"], { stdio: "ignore" });
-    return true;
+    return ["demucs"];
   } catch {
-    return false;
+    /* not installed directly */
+  }
+  try {
+    execFileSync("uvx", ["--version"], { stdio: "ignore" });
+    // demucs 4.x forgets to declare numpy; --with patches that
+    return ["uvx", "--python", "3.12", "--with", "numpy", "--from", "demucs", "demucs"];
+  } catch {
+    return null;
   }
 })();
 
-if (channels >= 5 && SURROUND_NAMES) {
-  // Surround source: dialogue lives in the center channel. Background =
-  // downmix of everything except FC; vocals = FC alone. Named channel
-  // selectors resolve via the stream's layout, immune to codec channel order.
-  console.log(`Separating dialogue via center channel (${layout} source)…`);
-  const backs = SURROUND_NAMES.filter((c) => c.endsWith("L"));
-  const rights = SURROUND_NAMES.filter((c) => c.endsWith("R"));
-  const left = ["FL", ...backs.map((c) => `0.7*${c}`), "0.5*LFE"].join("+");
-  const right = ["FR", ...rights.map((c) => `0.7*${c}`), "0.5*LFE"].join("+");
-  execFileSync("ffmpeg", [
-    "-y", ...trimArgs, "-i", videoFile, "-vn",
-    "-af", `pan=stereo|c0=${left}|c1=${right}`,
-    "-c:a", "aac", "-b:a", "128k", join(outDir, "background.m4a"),
-  ], { stdio: ["ignore", "ignore", "inherit"] });
-  execFileSync("ffmpeg", [
-    "-y", ...trimArgs, "-i", videoFile, "-vn",
-    "-af", "pan=mono|c0=FC",
-    "-c:a", "aac", "-b:a", "96k", join(outDir, "vocals.m4a"),
-  ], { stdio: ["ignore", "ignore", "inherit"] });
-  hasBackground = hasVocals = true;
-} else if (hasDemucs) {
-  console.log("Separating dialogue with demucs (stereo source) — this takes a while…");
+if (demucsCmd) {
+  console.log("Separating dialogue with demucs — first run downloads the model, then it's fast…");
   const sepTmp = mkdtempSync(join(tmpdir(), "act-off-demucs-"));
   try {
-    execFileSync("demucs", [
+    execFileSync(demucsCmd[0], [
+      ...demucsCmd.slice(1),
       "--two-stems=vocals", "-o", sepTmp, join(outDir, "original.m4a"),
     ], { stdio: ["ignore", "ignore", "inherit"] });
     // Output lands at <sepTmp>/<model>/<basename>/{vocals,no_vocals}.wav
@@ -205,15 +176,19 @@ if (channels >= 5 && SURROUND_NAMES) {
       "-c:a", "aac", "-b:a", "96k", join(outDir, "vocals.m4a"),
     ], { stdio: "ignore" });
     hasBackground = hasVocals = true;
+  } catch {
+    console.warn(
+      "⚠ demucs failed — building without separated stems.\n" +
+      "  The screening will play the original audio between lines instead."
+    );
   } finally {
     rmSync(sepTmp, { recursive: true, force: true });
   }
 } else {
   console.warn(
-    `⚠ No background separation: source audio is ${channels}ch (${layout || "unknown layout"}) ` +
-    "and demucs is not installed.\n" +
-    "  The screening will play the original audio between lines instead.\n" +
-    "  For a dialogue-free background: pipx install demucs (or pip3 install demucs), then rebuild."
+    "⚠ No background separation available: install uv (brew install uv) or\n" +
+    "  demucs (pipx install demucs), then rebuild this pack.\n" +
+    "  Until then the screening plays the original audio between lines."
   );
 }
 
