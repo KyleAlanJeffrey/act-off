@@ -63,6 +63,17 @@ body {
 }
 .animate-ping-slow { animation: count-pop 0.3s ease-out infinite; }
 
+/* Landing: film strips of scene stills drifting behind the marquee */
+@keyframes strip-drift {
+  from { transform: translateX(0); }
+  to { transform: translateX(-50%); }
+}
+.strip-drift { animation: strip-drift var(--strip-duration, 80s) linear infinite; }
+.strip-drift-reverse { animation-direction: reverse; }
+@media (prefers-reduced-motion: reduce) {
+  .strip-drift { animation: none; }
+}
+
 @keyframes blob-pulse {
   0%, 100% { opacity: 0.35; transform: scale(1); }
   50% { opacity: 0.5; transform: scale(1.08); }

@@ -138,7 +138,7 @@ export default function App() {
 
   return (
     <Routes>
-      <Route path="/" element={<Landing onSolo={() => navigate("/solo")} />} />
+      <Route path="/" element={<Landing scenes={scenes} onSolo={() => navigate("/solo")} />} />
       <Route
         path="/solo"
         element={

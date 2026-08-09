@@ -1,10 +1,19 @@
+import type { Scene } from "../types";
+import { sceneAssetUrl } from "../types";
 import { BgBlobs, Card, Chip, Icon, NeonButton } from "../components/ui";
 
 const TITLE = ["D", "U", "B", "-", "O", "F", "F"];
 
-export default function Landing({ onSolo }: { onSolo: () => void }) {
+export default function Landing({
+  scenes,
+  onSolo,
+}: {
+  scenes: Scene[];
+  onSolo: () => void;
+}) {
   return (
-    <div className="min-h-screen flex flex-col items-center justify-center p-6 relative">
+    <div className="min-h-screen flex flex-col items-center justify-center p-6 relative overflow-hidden">
+      <SceneStrips scenes={scenes} />
       <BgBlobs />
       <main className="relative z-10 flex flex-col items-center gap-10 w-full max-w-xl">
         <div className="text-center">
@@ -73,6 +82,70 @@ export default function Landing({ onSolo }: { onSolo: () => void }) {
           </div>
         </Card>
       </main>
+    </div>
+  );
+}
+
+/**
+ * Backdrop of the actual scene library: tilted film strips of scene stills
+ * (thumbnail + character faces) drifting slowly behind the marquee. Repeats
+ * the pool to fill the strips, so it works with a library of one.
+ */
+function SceneStrips({ scenes }: { scenes: Scene[] }) {
+  const stills = scenes.flatMap((s) => [
+    ...(s.hasThumb ? [sceneAssetUrl(s.id, "thumb.jpg")] : []),
+    ...s.characters
+      .filter((c) => c.hasPortrait)
+      .map((c) => sceneAssetUrl(s.id, `char-${c.id}.jpg`)),
+  ]);
+  if (stills.length === 0) return null;
+
+  // Enough frames that each strip's repeating half fills any screen width
+  const perStrip = Math.max(8, Math.ceil(8 / stills.length) * stills.length);
+  const strips = [
+    { duration: "90s", reverse: false, offset: 0 },
+    { duration: "140s", reverse: true, offset: 1 },
+    { duration: "110s", reverse: false, offset: 2 },
+  ];
+
+  return (
+    <div
+      aria-hidden
+      className="absolute inset-0 overflow-hidden pointer-events-none select-none"
+    >
+      <div className="absolute inset-x-[-10%] top-1/2 -translate-y-1/2 flex flex-col gap-6 -rotate-6 scale-110 opacity-20">
+        {strips.map(({ duration, reverse, offset }, row) => {
+          const frames = Array.from(
+            { length: perStrip },
+            (_, i) => stills[(i + offset) % stills.length]
+          );
+          return (
+            <div key={row} className="overflow-hidden">
+              <div
+                className={`flex gap-6 w-max strip-drift ${reverse ? "strip-drift-reverse" : ""}`}
+                style={{ "--strip-duration": duration } as React.CSSProperties}
+              >
+                {/* content twice over for a seamless -50% loop */}
+                {[0, 1].map((half) => (
+                  <div key={half} className="flex gap-6">
+                    {frames.map((src, i) => (
+                      <img
+                        key={i}
+                        src={src}
+                        alt=""
+                        loading="lazy"
+                        className="h-28 md:h-36 aspect-video object-cover rounded-md border-2 border-outline-variant"
+                      />
+                    ))}
+                  </div>
+                ))}
+              </div>
+            </div>
+          );
+        })}
+      </div>
+      {/* Vignette so the marquee and buttons stay readable over the strips */}
+      <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_center,transparent_0%,var(--color-background)_78%)]" />
     </div>
   );
 }
