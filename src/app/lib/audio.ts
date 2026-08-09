@@ -167,8 +167,12 @@ export function scheduleScreening(opts: {
   durationMs: number;
   lines: { startMs: number; endMs: number; take?: AudioBuffer }[];
   leadInSec?: number;
+  /** Where to send the mix. Defaults to the speakers; pass a
+   *  MediaStreamAudioDestinationNode to capture it for export. */
+  out?: AudioNode;
 }): { startTime: number; stop: () => void } {
   const ac = audioCtx();
+  const out = opts.out ?? ac.destination;
   const t0 = ac.currentTime + (opts.leadInSec ?? 0.15);
   const sources: AudioBufferSourceNode[] = [];
 
@@ -176,7 +180,7 @@ export function scheduleScreening(opts: {
     if (toMs <= fromMs) return;
     const src = ac.createBufferSource();
     src.buffer = buffer;
-    src.connect(ac.destination);
+    src.connect(out);
     src.start(t0 + atMs / 1000, fromMs / 1000, (toMs - fromMs) / 1000);
     sources.push(src);
   };
@@ -199,7 +203,7 @@ export function scheduleScreening(opts: {
     if (line.take) {
       const src = ac.createBufferSource();
       src.buffer = line.take;
-      src.connect(ac.destination);
+      src.connect(out);
       src.start(t0 + line.startMs / 1000);
       sources.push(src);
     } else {

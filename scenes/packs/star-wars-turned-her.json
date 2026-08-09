@@ -33,7 +33,7 @@
       "endMs": 10000
     },
     {
-      "characterId": "obi-wan",
+      "characterId": "anakin",
       "text": "you will not take her from me",
       "startMs": 12000,
       "endMs": 15000
@@ -63,9 +63,9 @@
       "endMs": 49000
     },
     {
-      "characterId": "anakin",
+      "characterId": "obi-wan",
       "text": "you're new empire",
-      "startMs": 4900,
+      "startMs": 49000,
       "endMs": 52000
     },
     {

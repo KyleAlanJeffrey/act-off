@@ -26,8 +26,8 @@ so it's also the first-playable milestone.
 ## Status
 
 **Solo Show is playable.** Landing → mic check → scene select → casting → recording studio
-(per-line waveforms, 3-2-1 countdown, retakes) → synced dubbed screening. Runs fully
-client-side. Party mode (lobby + Favorite Voice voting) is next — the Worker/API
+(per-line waveforms, countdown, retakes) → synced dubbed screening → download or share the
+final cut as a video file. Runs fully client-side. Party mode (lobby + Favorite Voice voting) is next — the Worker/API
 scaffolding is in place, the Durable Object isn't built yet.
 
 ```bash

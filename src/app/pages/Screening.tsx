@@ -3,6 +3,7 @@ import type { Scene, Take } from "../types";
 import { sceneAssetUrl } from "../types";
 import { audioCtx, scheduleScreening } from "../lib/audio";
 import { BgBlobs, Card, Chip, Icon, NeonButton } from "../components/ui";
+import { canShareFiles, downloadBlob, dubFilename, exportDub } from "../lib/export";
 
 type Props = {
   scene: Scene;
@@ -29,6 +30,9 @@ export default function Screening({
   const [ended, setEnded] = useState(false);
   const [timeMs, setTimeMs] = useState(0);
   const tickRef = useRef(0);
+  const [exportProgress, setExportProgress] = useState<number | null>(null);
+  const [exportError, setExportError] = useState<string | null>(null);
+  const cutRef = useRef<Blob | null>(null);
 
   const activeLine = scene.lines.find((l) => timeMs >= l.startMs && timeMs <= l.endMs + 350);
   const activeCharacter = activeLine
@@ -83,6 +87,52 @@ export default function Screening({
     }, 100);
   };
 
+  /** Renders the cut once, then reuses it for download/share. */
+  const renderCut = async (): Promise<Blob | null> => {
+    if (cutRef.current) return cutRef.current;
+    stop();
+    setExportError(null);
+    setExportProgress(0);
+    try {
+      const blob = await exportDub({
+        videoUrl: sceneAssetUrl(scene.id, "clip.mp4"),
+        original: originalBuffer,
+        background: backgroundBuffer ?? undefined,
+        vocals: vocalsBuffer ?? undefined,
+        durationMs: scene.durationMs,
+        lines: scene.lines.map((l) => ({
+          startMs: l.startMs,
+          endMs: l.endMs,
+          take: takes.get(l.index)?.buffer,
+        })),
+        onProgress: setExportProgress,
+      });
+      cutRef.current = blob;
+      return blob;
+    } catch (e) {
+      setExportError(e instanceof Error ? e.message : "Export failed — try again.");
+      return null;
+    } finally {
+      setExportProgress(null);
+    }
+  };
+
+  const downloadCut = async () => {
+    const blob = await renderCut();
+    if (blob) downloadBlob(blob, dubFilename(scene.id, blob.type));
+  };
+
+  const shareCut = async () => {
+    const blob = await renderCut();
+    if (!blob) return;
+    const file = new File([blob], dubFilename(scene.id, blob.type), { type: blob.type });
+    try {
+      await navigator.share({ files: [file], title: `${scene.title} — Act-Off cut` });
+    } catch {
+      // user dismissed the share sheet — nothing to clean up
+    }
+  };
+
   const handleEnded = () => {
     mixRef.current = null;
     clearInterval(tickRef.current);
@@ -133,20 +183,46 @@ export default function Screening({
             {/* Curtain / start overlay */}
             {!playing && (
               <div className="absolute inset-0 bg-background/80 backdrop-blur-sm flex flex-col items-center justify-center gap-5 rounded-md">
-                {ended ? (
+                {exportProgress !== null ? (
+                  <>
+                    <p className="font-display font-extrabold text-3xl uppercase text-secondary-container">
+                      Rendering your cut… {Math.round(exportProgress * 100)}%
+                    </p>
+                    <div className="w-72 h-2.5 bg-surface-container-lowest rounded-full border-2 border-outline-variant overflow-hidden">
+                      <div
+                        className="h-full bg-secondary-container transition-[width] duration-200"
+                        style={{ width: `${exportProgress * 100}%` }}
+                      />
+                    </div>
+                    <p className="text-sm text-on-surface-variant">
+                      Renders in real time — keep this tab visible.
+                    </p>
+                  </>
+                ) : ended ? (
                   <>
                     <p className="font-display font-extrabold text-4xl uppercase text-gold">That's a wrap!</p>
-                    <div className="flex gap-4 flex-wrap justify-center">
+                    <div className="flex gap-4 flex-wrap justify-center max-w-xl">
                       <NeonButton variant="primary" onClick={() => void play()}>
                         <Icon name="replay" /> Watch again
                       </NeonButton>
+                      <NeonButton variant="tertiary" onClick={() => void downloadCut()}>
+                        <Icon name="download" /> Download the cut
+                      </NeonButton>
+                      {canShareFiles() && (
+                        <NeonButton variant="secondary" onClick={() => void shareCut()}>
+                          <Icon name="ios_share" /> Share
+                        </NeonButton>
+                      )}
                       <NeonButton variant="secondary" onClick={onBackToStudio}>
                         <Icon name="mic" /> Re-record lines
                       </NeonButton>
-                      <NeonButton variant="tertiary" onClick={onNewScene}>
+                      <NeonButton variant="ghost" onClick={onNewScene}>
                         <Icon name="movie_filter" /> New scene
                       </NeonButton>
                     </div>
+                    {exportError && (
+                      <p className="text-error text-sm font-bold">{exportError}</p>
+                    )}
                   </>
                 ) : (
                   <NeonButton variant="tertiary" onClick={() => void play()} className="py-5 px-12 text-lg">
