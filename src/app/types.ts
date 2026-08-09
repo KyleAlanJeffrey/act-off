@@ -2,6 +2,8 @@ export type Character = {
   id: string;
   name: string;
   emoji: string;
+  /** True when the pack includes char-<id>.jpg (a frame of them speaking). */
+  hasPortrait?: boolean;
 };
 
 export type CueLine = {
@@ -23,6 +25,8 @@ export type Scene = {
   hasBackground?: boolean;
   /** True when the pack includes vocals.m4a (dialogue only). */
   hasVocals?: boolean;
+  /** True when the pack includes thumb.jpg (a frame from the scene). */
+  hasThumb?: boolean;
   characters: Character[];
   lines: CueLine[];
 };

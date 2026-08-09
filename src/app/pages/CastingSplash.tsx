@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import type { Scene } from "../types";
+import { sceneAssetUrl } from "../types";
 import { BgBlobs, Card, Chip, Icon, NeonButton } from "../components/ui";
 
 export default function CastingSplash({
@@ -56,7 +57,15 @@ export default function CastingSplash({
                 >
                   {isRevealed ? (
                     <>
-                      <span className="text-5xl">{c.emoji}</span>
+                      {c.hasPortrait ? (
+                        <img
+                          src={sceneAssetUrl(scene.id, `char-${c.id}.jpg`)}
+                          alt={c.name}
+                          className="w-20 h-20 rounded-full object-cover border-3 border-primary-container glow-primary"
+                        />
+                      ) : (
+                        <span className="text-5xl">{c.emoji}</span>
+                      )}
                       <p className="font-display font-bold uppercase">{c.name}</p>
                       <Chip color="pink">You</Chip>
                     </>

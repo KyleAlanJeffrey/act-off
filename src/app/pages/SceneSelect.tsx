@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import type { Scene } from "../types";
+import { sceneAssetUrl } from "../types";
 import { MicSession } from "../lib/audio";
 import { countTakesByScene } from "../lib/takesStore";
 import { BgBlobs, Card, Chip, Icon, LevelMeter, NeonButton } from "../components/ui";
@@ -162,40 +163,69 @@ function SceneCard({
     );
   }
   const lineCount = (charId: string) => scene.lines.filter((l) => l.characterId === charId).length;
+  const badges = (
+    <div className="flex gap-2 flex-wrap justify-end">
+      {savedCount > 0 && (
+        <Chip color="lime">Resume · {savedCount}/{scene.lines.length}</Chip>
+      )}
+      <Chip color="cyan">{Math.round(scene.durationMs / 1000)}s</Chip>
+    </div>
+  );
   return (
     <button
       onClick={onPick}
       className={`text-left cursor-pointer group ${dimmed ? "opacity-40 pointer-events-none" : ""}`}
     >
-      <Card className="p-6 flex flex-col gap-3 min-h-52 group-hover:border-secondary-container group-hover:glow-secondary h-full">
-        <div className="flex items-start justify-between gap-2">
-          <span className="text-4xl">{scene.characters[0]?.emoji}</span>
-          <div className="flex gap-2 flex-wrap justify-end">
-            {savedCount > 0 && (
-              <Chip color="lime">Resume · {savedCount}/{scene.lines.length}</Chip>
-            )}
-            <Chip color="cyan">{Math.round(scene.durationMs / 1000)}s</Chip>
+      <Card className="overflow-hidden flex flex-col min-h-52 h-full group-hover:border-secondary-container group-hover:glow-secondary">
+        {scene.hasThumb && (
+          <div className="relative border-b-3 border-outline-variant">
+            <img
+              src={sceneAssetUrl(scene.id, "thumb.jpg")}
+              alt=""
+              className="w-full aspect-video object-cover"
+            />
+            <div className="absolute top-2.5 right-2.5">{badges}</div>
           </div>
-        </div>
-        <h3 className="font-display font-bold text-xl uppercase leading-tight">{scene.title}</h3>
-        <p className="text-sm text-on-surface-variant flex-1">{scene.tagline}</p>
-        {scene.sourceUrl && (
-          <a
-            href={scene.sourceUrl}
-            target="_blank"
-            rel="noreferrer"
-            onClick={(e) => e.stopPropagation()}
-            className="text-xs font-bold uppercase tracking-widest text-secondary-container hover:underline flex items-center gap-1 w-fit"
-          >
-            <Icon name="link" className="text-sm" /> Source
-          </a>
         )}
-        <div className="flex flex-wrap gap-2">
-          {scene.characters.map((c) => (
-            <Chip key={c.id} color="dim">
-              {c.emoji} {c.name} · {lineCount(c.id)} lines
-            </Chip>
-          ))}
+        <div className="p-5 flex flex-col gap-3 flex-1">
+          {!scene.hasThumb && (
+            <div className="flex items-start justify-between gap-2">
+              <span className="text-4xl">{scene.characters[0]?.emoji}</span>
+              {badges}
+            </div>
+          )}
+          <h3 className="font-display font-bold text-xl uppercase leading-tight">{scene.title}</h3>
+          <p className="text-sm text-on-surface-variant flex-1">{scene.tagline}</p>
+          {scene.sourceUrl && (
+            <a
+              href={scene.sourceUrl}
+              target="_blank"
+              rel="noreferrer"
+              onClick={(e) => e.stopPropagation()}
+              className="text-xs font-bold uppercase tracking-widest text-secondary-container hover:underline flex items-center gap-1 w-fit"
+            >
+              <Icon name="link" className="text-sm" /> Source
+            </a>
+          )}
+          <div className="flex flex-wrap gap-2">
+            {scene.characters.map((c) => (
+              <span
+                key={c.id}
+                className="inline-flex items-center gap-1.5 rounded-full bg-surface-container-highest text-on-surface-variant text-xs font-bold uppercase tracking-widest py-0.5 pr-3 pl-0.5 whitespace-nowrap"
+              >
+                {c.hasPortrait ? (
+                  <img
+                    src={sceneAssetUrl(scene.id, `char-${c.id}.jpg`)}
+                    alt=""
+                    className="w-6 h-6 rounded-full object-cover border-2 border-outline-variant"
+                  />
+                ) : (
+                  <span className="pl-2">{c.emoji}</span>
+                )}
+                {c.name} · {lineCount(c.id)} lines
+              </span>
+            ))}
+          </div>
         </div>
       </Card>
     </button>

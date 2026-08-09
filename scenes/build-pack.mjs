@@ -21,7 +21,7 @@
 //
 // Output: public/scenes/<id>/{clip.mp4, original.m4a, cues.json}
 // and registers the id in public/scenes/index.json.
-import { execFileSync } from "node:child_process";
+import { execFileSync, spawnSync } from "node:child_process";
 import {
   mkdirSync, writeFileSync, readFileSync, existsSync, readdirSync, rmSync, mkdtempSync,
 } from "node:fs";
@@ -210,6 +210,43 @@ for (const l of pack.lines) {
   }
 }
 
+// ---- Preview images ---------------------------------------------------------
+// A scene thumbnail plus a face frame per character — grabbed mid-way through
+// the character's first line, when they're most likely the one on screen.
+console.log("Extracting preview images…");
+// Letterbox bars are usually baked into the clip — detect the active picture
+// once so thumbnails and portraits crop to actual movie, not black bars.
+const activeArea = (() => {
+  const r = spawnSync("ffmpeg", [
+    "-ss", (durationMs / 2000).toFixed(3), "-i", join(outDir, "clip.mp4"),
+    "-frames:v", "5", "-vf", "cropdetect=round=2", "-f", "null", "-",
+  ], { encoding: "utf8" });
+  const m = [...(r.stderr ?? "").matchAll(/crop=(\d+):(\d+):(\d+):(\d+)/g)].pop();
+  return m ? { w: +m[1], h: +m[2], x: +m[3], y: +m[4] } : null;
+})();
+const frameAt = (ms, vf, out) =>
+  execFileSync("ffmpeg", [
+    "-y", "-ss", (Math.max(0, ms) / 1000).toFixed(3), "-i", join(outDir, "clip.mp4"),
+    "-frames:v", "1", "-vf", vf, "-q:v", "3", out,
+  ], { stdio: "ignore" });
+const bars = activeArea ? `crop=${activeArea.w}:${activeArea.h}:${activeArea.x}:${activeArea.y},` : "";
+// Square face crop, centered in the active picture
+const face = activeArea
+  ? `crop=${activeArea.h}:${activeArea.h}:${activeArea.x + Math.round((activeArea.w - activeArea.h) / 2)}:${activeArea.y},`
+  : "crop='min(iw,ih)':'min(iw,ih)',";
+frameAt(durationMs / 2, `${bars}scale=640:-2`, join(outDir, "thumb.jpg"));
+for (const c of pack.characters) {
+  const first = sorted.find((l) => l.characterId === c.id);
+  if (!first) continue;
+  const mid = (first.startMs + first.endMs) / 2 - trimStart;
+  try {
+    frameAt(mid, `${face}scale=180:180`, join(outDir, `char-${c.id}.jpg`));
+    c.hasPortrait = true;
+  } catch {
+    console.warn(`⚠ Could not extract a portrait frame for "${c.name}".`);
+  }
+}
+
 writeFileSync(
   join(outDir, "cues.json"),
   JSON.stringify(
@@ -221,7 +258,13 @@ writeFileSync(
       durationMs,
       hasBackground,
       hasVocals,
-      characters: pack.characters.map(({ id, name, emoji }) => ({ id, name, emoji })),
+      hasThumb: true,
+      characters: pack.characters.map(({ id, name, emoji, hasPortrait }) => ({
+        id,
+        name,
+        emoji,
+        ...(hasPortrait ? { hasPortrait: true } : {}),
+      })),
       lines: sorted.map((l, i) => ({
         index: i,
         characterId: l.characterId,
