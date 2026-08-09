@@ -5,12 +5,17 @@ import { BgBlobs, Card, Chip, Icon, NeonButton } from "../components/ui";
 export default function CastingSplash({
   scene,
   ready,
+  dubbedCount,
   onContinue,
+  onStartFresh,
 }: {
   scene: Scene;
   /** False while the scene's original audio is still decoding. */
   ready: boolean;
+  /** Takes restored from a previous session — offers picking up vs. starting fresh. */
+  dubbedCount: number;
   onContinue: () => void;
+  onStartFresh: () => void;
 }) {
   const [revealed, setRevealed] = useState(0);
 
@@ -84,6 +89,22 @@ export default function CastingSplash({
             </>
           )}
         </NeonButton>
+
+        {ready && dubbedCount > 0 && (
+          <p className="text-sm text-on-surface-variant -mt-6">
+            Picking up where you left off —{" "}
+            <span className="text-tertiary font-bold">
+              {dubbedCount}/{scene.lines.length} lines
+            </span>{" "}
+            already dubbed.{" "}
+            <button
+              onClick={onStartFresh}
+              className="text-secondary-container font-bold uppercase tracking-wider hover:underline cursor-pointer"
+            >
+              Start fresh
+            </button>
+          </p>
+        )}
       </main>
     </div>
   );

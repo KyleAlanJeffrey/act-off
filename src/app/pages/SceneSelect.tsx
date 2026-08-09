@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import type { Scene } from "../types";
 import { MicSession } from "../lib/audio";
+import { countTakesByScene } from "../lib/takesStore";
 import { BgBlobs, Card, Chip, Icon, LevelMeter, NeonButton } from "../components/ui";
 
 type Props = {
@@ -14,7 +15,13 @@ type Props = {
 export default function SceneSelect({ scenes, mic, onMicReady, onPick, onBack }: Props) {
   const [micError, setMicError] = useState<string | null>(null);
   const [level, setLevel] = useState(0);
+  const [savedCounts, setSavedCounts] = useState<Map<string, number>>(new Map());
   const rafRef = useRef(0);
+
+  // Saved takes from a previous session show as a "Resume" badge per card.
+  useEffect(() => {
+    void countTakesByScene().then(setSavedCounts);
+  }, []);
 
   useEffect(() => {
     if (!mic) return;
@@ -111,7 +118,14 @@ export default function SceneSelect({ scenes, mic, onMicReady, onPick, onBack }:
         )}
         <div className="grid md:grid-cols-3 gap-6">
           {scenes.map((scene) => (
-            <SceneCard key={scene.id} scene={scene} locked={false} onPick={() => mic && onPick(scene)} dimmed={!mic} />
+            <SceneCard
+              key={scene.id}
+              scene={scene}
+              locked={false}
+              savedCount={savedCounts.get(scene.id) ?? 0}
+              onPick={() => mic && onPick(scene)}
+              dimmed={!mic}
+            />
           ))}
           <SceneCard locked onPick={() => {}} dimmed={!mic} />
           <SceneCard locked onPick={() => {}} dimmed={!mic} />
@@ -130,11 +144,13 @@ function SceneCard({
   scene,
   locked,
   dimmed,
+  savedCount = 0,
   onPick,
 }: {
   scene?: Scene;
   locked: boolean;
   dimmed: boolean;
+  savedCount?: number;
   onPick: () => void;
 }) {
   if (locked || !scene) {
@@ -152,9 +168,14 @@ function SceneCard({
       className={`text-left cursor-pointer group ${dimmed ? "opacity-40 pointer-events-none" : ""}`}
     >
       <Card className="p-6 flex flex-col gap-3 min-h-52 group-hover:border-secondary-container group-hover:glow-secondary h-full">
-        <div className="flex items-start justify-between">
+        <div className="flex items-start justify-between gap-2">
           <span className="text-4xl">{scene.characters[0]?.emoji}</span>
-          <Chip color="cyan">{Math.round(scene.durationMs / 1000)}s</Chip>
+          <div className="flex gap-2 flex-wrap justify-end">
+            {savedCount > 0 && (
+              <Chip color="lime">Resume · {savedCount}/{scene.lines.length}</Chip>
+            )}
+            <Chip color="cyan">{Math.round(scene.durationMs / 1000)}s</Chip>
+          </div>
         </div>
         <h3 className="font-display font-bold text-xl uppercase leading-tight">{scene.title}</h3>
         <p className="text-sm text-on-surface-variant flex-1">{scene.tagline}</p>

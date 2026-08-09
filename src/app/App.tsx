@@ -4,7 +4,7 @@ import type { ReactElement } from "react";
 import type { Scene, Take } from "./types";
 import { sceneAssetUrl } from "./types";
 import { blobToAudioBuffer, fetchAudioBuffer, MicSession } from "./lib/audio";
-import { loadTakes, saveTake } from "./lib/takesStore";
+import { clearTakes, loadTakes, saveTake } from "./lib/takesStore";
 import { LoadingStage } from "./components/ui";
 import Landing from "./pages/Landing";
 import SceneSelect from "./pages/SceneSelect";
@@ -102,6 +102,12 @@ export default function App() {
     if (scene && take.blob) void saveTake(scene.id, lineIndex, take.blob);
   };
 
+  /** Drops the restored takes and their saved copies ("start fresh"). */
+  const startFresh = () => {
+    setTakes(new Map());
+    if (scene) void clearTakes(scene.id);
+  };
+
   const backToSelect = () => {
     setScene(null);
     loadingSceneRef.current = null;
@@ -153,7 +159,9 @@ export default function App() {
               <CastingSplash
                 scene={s}
                 ready={originalBuffer !== null}
+                dubbedCount={takes.size}
                 onContinue={() => navigate(`/solo/${s.id}/studio`)}
+                onStartFresh={startFresh}
               />
             )}
           </SceneFlowRoute>

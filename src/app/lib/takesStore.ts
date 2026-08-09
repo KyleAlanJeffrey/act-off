@@ -46,6 +46,60 @@ export async function saveTake(
   }
 }
 
+/** Fresh-take counts for every scene in one scan — drives the "Resume"
+ *  badges on scene cards. Stale entries are pruned along the way. */
+export async function countTakesByScene(): Promise<Map<string, number>> {
+  try {
+    const db = await openDb();
+    const tx = db.transaction(STORE, "readwrite");
+    const store = tx.objectStore(STORE);
+    const counts = new Map<string, number>();
+    await new Promise<void>((resolve, reject) => {
+      const cursorReq = store.openCursor();
+      cursorReq.onsuccess = () => {
+        const cursor = cursorReq.result;
+        if (!cursor) return resolve();
+        const value = cursor.value as StoredTake;
+        if (Date.now() - value.updatedAt > MAX_AGE_MS) {
+          cursor.delete();
+        } else {
+          counts.set(value.sceneId, (counts.get(value.sceneId) ?? 0) + 1);
+        }
+        cursor.continue();
+      };
+      cursorReq.onerror = () => reject(cursorReq.error);
+    });
+    await txDone(tx);
+    db.close();
+    return counts;
+  } catch {
+    return new Map();
+  }
+}
+
+/** Deletes every saved take for a scene ("start fresh"). */
+export async function clearTakes(sceneId: string): Promise<void> {
+  try {
+    const db = await openDb();
+    const tx = db.transaction(STORE, "readwrite");
+    const store = tx.objectStore(STORE);
+    await new Promise<void>((resolve, reject) => {
+      const cursorReq = store.openCursor();
+      cursorReq.onsuccess = () => {
+        const cursor = cursorReq.result;
+        if (!cursor) return resolve();
+        if ((cursor.value as StoredTake).sceneId === sceneId) cursor.delete();
+        cursor.continue();
+      };
+      cursorReq.onerror = () => reject(cursorReq.error);
+    });
+    await txDone(tx);
+    db.close();
+  } catch {
+    // Best-effort, same as saving.
+  }
+}
+
 /** All fresh takes for a scene; stale entries are deleted as they're found. */
 export async function loadTakes(
   sceneId: string
