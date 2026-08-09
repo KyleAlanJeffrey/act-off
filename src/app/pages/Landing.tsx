@@ -113,7 +113,7 @@ function SceneStrips({ scenes }: { scenes: Scene[] }) {
       aria-hidden
       className="absolute inset-0 overflow-hidden pointer-events-none select-none"
     >
-      <div className="absolute inset-x-[-10%] top-1/2 -translate-y-1/2 flex flex-col gap-6 -rotate-6 scale-110 opacity-20">
+      <div className="absolute inset-x-[-10%] top-1/2 -translate-y-1/2 flex flex-col gap-6 -rotate-6 scale-110 opacity-45">
         {strips.map(({ duration, reverse, offset }, row) => {
           const frames = Array.from(
             { length: perStrip },
@@ -144,8 +144,8 @@ function SceneStrips({ scenes }: { scenes: Scene[] }) {
           );
         })}
       </div>
-      {/* Vignette so the marquee and buttons stay readable over the strips */}
-      <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_center,transparent_0%,var(--color-background)_78%)]" />
+      {/* Scrim behind the centered content; strips stay visible at the sides */}
+      <div className="absolute inset-0 bg-[radial-gradient(ellipse_55%_60%_at_center,var(--color-background)_15%,transparent_100%)] opacity-80" />
     </div>
   );
 }
