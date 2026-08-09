@@ -8,6 +8,8 @@ import { BgBlobs, Card, Chip, Icon, LevelMeter, NeonButton } from "../components
 type Props = {
   scene: Scene;
   originalBuffer: AudioBuffer;
+  /** Dialogue-free background stem, when the pack has one. */
+  backgroundBuffer: AudioBuffer | null;
   mic: MicSession;
   takes: Map<number, Take>;
   onTake: (lineIndex: number, take: Take) => void;
@@ -21,7 +23,15 @@ type Transport =
   | { kind: "playingOriginal" }
   | { kind: "playingTake" };
 
-export default function Studio({ scene, originalBuffer, mic, takes, onTake, onWrap }: Props) {
+export default function Studio({
+  scene,
+  originalBuffer,
+  backgroundBuffer,
+  mic,
+  takes,
+  onTake,
+  onWrap,
+}: Props) {
   const [focused, setFocused] = useState(0);
   const [transport, setTransport] = useState<Transport>({ kind: "idle" });
   const [origProgress, setOrigProgress] = useState(0);
@@ -114,6 +124,10 @@ export default function Studio({ scene, originalBuffer, mic, takes, onTake, onWr
     setTransport({ kind: "playingTake" });
     rollVideo();
     playerRef.current = playSegment(take.buffer, {
+      // Lay the scene's background under the take so it sounds like the dub
+      bed: backgroundBuffer
+        ? { buffer: backgroundBuffer, offsetMs: line.startMs }
+        : undefined,
       onProgress: setTakeProgress,
       onEnded: () => {
         pauseVideo();

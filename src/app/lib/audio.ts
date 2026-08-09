@@ -18,13 +18,16 @@ export async function blobToAudioBuffer(blob: Blob): Promise<AudioBuffer> {
 
 /**
  * Plays one segment of a buffer. Returns a handle that reports progress (0..1)
- * via rAF and can be stopped early.
+ * via rAF and can be stopped early. An optional `bed` (e.g. the dialogue-free
+ * background stem) plays underneath for the same window, so auditioning a take
+ * sounds like the final dub.
  */
 export function playSegment(
   buffer: AudioBuffer,
   opts: {
     startMs?: number;
     endMs?: number;
+    bed?: { buffer: AudioBuffer; offsetMs: number };
     onProgress?: (p: number) => void;
     onEnded?: () => void;
   } = {}
@@ -40,6 +43,14 @@ export function playSegment(
   const t0 = ac.currentTime;
   src.start(t0, startSec, durSec);
 
+  let bedSrc: AudioBufferSourceNode | null = null;
+  if (opts.bed) {
+    bedSrc = ac.createBufferSource();
+    bedSrc.buffer = opts.bed.buffer;
+    bedSrc.connect(ac.destination);
+    bedSrc.start(t0, opts.bed.offsetMs / 1000, durSec);
+  }
+
   let raf = 0;
   let done = false;
   const tick = () => {
@@ -49,10 +60,19 @@ export function playSegment(
   };
   raf = requestAnimationFrame(tick);
 
+  const stopBed = () => {
+    try {
+      bedSrc?.stop();
+    } catch {
+      /* already stopped */
+    }
+  };
+
   const finish = () => {
     if (done) return;
     done = true;
     cancelAnimationFrame(raf);
+    stopBed();
     opts.onProgress?.(1);
     opts.onEnded?.();
   };

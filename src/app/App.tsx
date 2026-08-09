@@ -116,6 +116,7 @@ export default function App() {
         <Studio
           scene={scene}
           originalBuffer={originalBuffer}
+          backgroundBuffer={backgroundBuffer}
           mic={mic}
           takes={takes}
           onTake={recordTake}
