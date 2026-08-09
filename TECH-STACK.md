@@ -1,4 +1,4 @@
-# Act-Off — Tech Stack & Architecture
+# Dub-Off — Tech Stack & Architecture
 
 A web party game inspired by **The Choicer Voicer** (dub mode): friends join a lobby, each
 gets a character in a movie scene, and each player re-records their character's lines after
@@ -110,7 +110,7 @@ public-domain scenes you ship + user-uploaded private packs.
 ## Project layout
 
 ```
-act-off/
+dub-off/
   wrangler.jsonc
   src/
     worker/

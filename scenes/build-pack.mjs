@@ -158,7 +158,7 @@ const demucsCmd = (() => {
 
 if (demucsCmd) {
   console.log("Separating dialogue with demucs — first run downloads the model, then it's fast…");
-  const sepTmp = mkdtempSync(join(tmpdir(), "act-off-demucs-"));
+  const sepTmp = mkdtempSync(join(tmpdir(), "dub-off-demucs-"));
   try {
     execFileSync(demucsCmd[0], [
       ...demucsCmd.slice(1),

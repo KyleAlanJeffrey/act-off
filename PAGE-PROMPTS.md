@@ -1,4 +1,4 @@
-# Act-Off — UI Generation Prompts
+# Dub-Off — UI Generation Prompts
 
 Feed these to a UI-generation app (v0, Lovable, Claude, etc.) one at a time, **starting with
 the Global prompt**, then one prompt per page. Each page prompt includes the props/state it
@@ -12,7 +12,7 @@ layouts needed.
 
 ## 0. Global (send first, keep in context for every page)
 
-> Build pages for "Act-Off", a desktop web party game where friends re-record the dialogue
+> Build pages for "Dub-Off", a desktop web party game where friends re-record the dialogue
 > of a movie scene line-by-line with their own voices (inspired by The Choicer Voicer's dub
 > mode), then watch the dubbed scene together. Tone: **"Pop-Neon Night"** — a high-energy
 > backstage-karaoke-party aesthetic. Deep indigo-purple night backgrounds, neon hot-pink
@@ -44,7 +44,7 @@ layouts needed.
 
 ## 1. Landing page
 
-> Landing page. Marquee-style title "ACT-OFF", one-line pitch ("Re-voice famous scenes with
+> Landing page. Marquee-style title "DUB-OFF", one-line pitch ("Re-voice famous scenes with
 > your friends. Line by line. Badly."), three actions: "Start a Show" (party lobby), a join
 > form (4-letter room code + "Join"), and a distinct secondary card **"Solo Show — play
 > EVERYONE"** (one-person-does-all-the-voices mode; no lobby needed).

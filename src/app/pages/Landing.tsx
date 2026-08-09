@@ -1,6 +1,6 @@
 import { BgBlobs, Card, Chip, Icon, NeonButton } from "../components/ui";
 
-const TITLE = ["A", "C", "T", "-", "O", "F", "F"];
+const TITLE = ["D", "U", "B", "-", "O", "F", "F"];
 
 export default function Landing({ onSolo }: { onSolo: () => void }) {
   return (

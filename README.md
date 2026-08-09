@@ -1,4 +1,4 @@
-# 🎬 Act-Off
+# 🎬 Dub-Off
 
 A desktop web party game where friends re-record the dialogue of a movie scene **line by
 line** with their own voices, then watch the dubbed scene back together and vote for the
@@ -104,15 +104,11 @@ npm run scene:pack -- ~/Movies/your-clip.mp4 scenes/packs/my-scene.json
 ### Background audio without the original dialogue
 
 The screening keeps the scene's music/ambience under your takes while removing the
-original dialogue. `scene:pack` builds the stems automatically, best method first:
-
-1. **5.1/7.1 sources** (most movie files): dialogue lives in the center channel, so the
-   pack gets `background.m4a` (downmix without FC) and `vocals.m4a` (FC alone) for free —
-   near-perfect separation, no extra tools.
-2. **Stereo sources**: install [demucs](https://github.com/adefossez/demucs)
-   (`pipx install demucs`) and rebuild — AI vocal separation produces the same two stems.
-3. **Neither available**: the screening falls back to playing the original audio only in
-   the gaps between lines, so takes never fight the real dialogue.
-
-Tip: when grabbing a clip, keep the surround audio track (don't downmix to stereo) and
-the separation stays free.
+original dialogue. `scene:pack` runs [demucs](https://github.com/adefossez/demucs)
+AI vocal separation on the clip's audio (YouTube clips are stereo, so channel tricks
+don't apply) and writes two stems: `background.m4a` (music/ambience) and `vocals.m4a`
+(original dialogue, used as gap-filler). Install it with `pipx install demucs`, or just
+have [uv](https://docs.astral.sh/uv/) on your PATH — the build falls back to `uvx`
+automatically. If neither is available the pack still builds; the screening then plays
+the original audio only in the gaps between lines, so takes never fight the real
+dialogue.

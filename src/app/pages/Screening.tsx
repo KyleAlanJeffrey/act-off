@@ -127,7 +127,7 @@ export default function Screening({
     if (!blob) return;
     const file = new File([blob], dubFilename(scene.id, blob.type), { type: blob.type });
     try {
-      await navigator.share({ files: [file], title: `${scene.title} — Act-Off cut` });
+      await navigator.share({ files: [file], title: `${scene.title} — Dub-Off cut` });
     } catch {
       // user dismissed the share sheet — nothing to clean up
     }

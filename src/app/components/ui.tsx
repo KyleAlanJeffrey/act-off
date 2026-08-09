@@ -99,6 +99,21 @@ export function Chip({
   );
 }
 
+/** Full-page splash while a scene's audio/takes restore (reload, deep link). */
+export function LoadingStage({ label = "Setting the stage…" }: { label?: string }) {
+  return (
+    <div className="min-h-screen flex flex-col items-center justify-center gap-6 relative">
+      <BgBlobs />
+      <span className="material-symbols-outlined text-6xl text-secondary-container animate-pulse">
+        theater_comedy
+      </span>
+      <p className="font-display font-bold text-2xl uppercase tracking-wide text-on-surface-variant">
+        {label}
+      </p>
+    </div>
+  );
+}
+
 export function LevelMeter({ level, className = "" }: { level: number; className?: string }) {
   const bars = 14;
   const lit = Math.round(level * bars);

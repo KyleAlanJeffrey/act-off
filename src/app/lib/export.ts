@@ -123,7 +123,7 @@ export function downloadBlob(blob: Blob, filename: string): void {
 }
 
 export function dubFilename(sceneId: string, mimeType: string): string {
-  return `act-off-${sceneId}.${mimeType.includes("mp4") ? "mp4" : "webm"}`;
+  return `dub-off-${sceneId}.${mimeType.includes("mp4") ? "mp4" : "webm"}`;
 }
 
 /** True when the browser can share files (Web Share API level 2). */
