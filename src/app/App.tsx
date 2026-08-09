@@ -1,5 +1,7 @@
 import { useEffect, useState } from "react";
-import type { Scene, SoloPhase, Take } from "./types";
+import { Navigate, Route, Routes, useNavigate, useParams } from "react-router-dom";
+import type { ReactElement } from "react";
+import type { Scene, Take } from "./types";
 import { sceneAssetUrl } from "./types";
 import { fetchAudioBuffer, MicSession } from "./lib/audio";
 import Landing from "./pages/Landing";
@@ -9,7 +11,7 @@ import Studio from "./pages/Studio";
 import Screening from "./pages/Screening";
 
 export default function App() {
-  const [phase, setPhase] = useState<SoloPhase>("landing");
+  const navigate = useNavigate();
   const [scenes, setScenes] = useState<Scene[]>([]);
   const [scene, setScene] = useState<Scene | null>(null);
   const [originalBuffer, setOriginalBuffer] = useState<AudioBuffer | null>(null);
@@ -47,7 +49,7 @@ export default function App() {
     setTakes(new Map());
     setBackgroundBuffer(null);
     setVocalsBuffer(null);
-    setPhase("cast");
+    navigate(`/solo/${s.id}/cast`);
     // Decode the scene audio (and stems, if the pack has them) while the
     // casting splash plays
     try {
@@ -65,7 +67,7 @@ export default function App() {
       setVocalsBuffer(vocals);
     } catch {
       setLoadError("Could not load the scene audio.");
-      setPhase("select");
+      navigate("/solo", { replace: true });
     }
   };
 
@@ -79,7 +81,31 @@ export default function App() {
     setBackgroundBuffer(null);
     setVocalsBuffer(null);
     setTakes(new Map());
-    setPhase("select");
+    navigate("/solo");
+  };
+
+  /**
+   * Scene routes carry state that only exists after walking the flow (decoded
+   * audio, mic, takes). On a reload or stale deep link, fall back to the
+   * scene picker rather than rendering a broken page.
+   */
+  const SceneRoute = ({
+    needMic,
+    render,
+  }: {
+    needMic?: boolean;
+    render: (scene: Scene, original: AudioBuffer) => ReactElement;
+  }) => {
+    const { sceneId } = useParams();
+    if (!scene || scene.id !== sceneId || (needMic && !mic)) {
+      return <Navigate to="/solo" replace />;
+    }
+    if (!originalBuffer) {
+      // Audio still decoding (or the page was reloaded mid-flow): the casting
+      // page owns the "loading" presentation, so park there.
+      return <Navigate to={`/solo/${scene.id}/cast`} replace />;
+    }
+    return render(scene, originalBuffer);
   };
 
   if (loadError) {
@@ -90,50 +116,85 @@ export default function App() {
     );
   }
 
-  switch (phase) {
-    case "landing":
-      return <Landing onSolo={() => setPhase("select")} />;
-    case "select":
-      return (
-        <SceneSelect
-          scenes={scenes}
-          mic={mic}
-          onMicReady={setMic}
-          onPick={(s) => void pickScene(s)}
-          onBack={() => setPhase("landing")}
-        />
-      );
-    case "cast":
-      return scene ? (
-        <CastingSplash
-          scene={scene}
-          ready={originalBuffer !== null}
-          onContinue={() => setPhase("studio")}
-        />
-      ) : null;
-    case "studio":
-      return scene && originalBuffer && mic ? (
-        <Studio
-          scene={scene}
-          originalBuffer={originalBuffer}
-          backgroundBuffer={backgroundBuffer}
-          mic={mic}
-          takes={takes}
-          onTake={recordTake}
-          onWrap={() => setPhase("screening")}
-        />
-      ) : null;
-    case "screening":
-      return scene && originalBuffer ? (
-        <Screening
-          scene={scene}
-          originalBuffer={originalBuffer}
-          backgroundBuffer={backgroundBuffer}
-          vocalsBuffer={vocalsBuffer}
-          takes={takes}
-          onBackToStudio={() => setPhase("studio")}
-          onNewScene={backToSelect}
-        />
-      ) : null;
-  }
+  return (
+    <Routes>
+      <Route path="/" element={<Landing onSolo={() => navigate("/solo")} />} />
+      <Route
+        path="/solo"
+        element={
+          <SceneSelect
+            scenes={scenes}
+            mic={mic}
+            onMicReady={setMic}
+            onPick={(s) => void pickScene(s)}
+            onBack={() => navigate("/")}
+          />
+        }
+      />
+      <Route
+        path="/solo/:sceneId/cast"
+        element={
+          <CastRoute
+            scene={scene}
+            ready={originalBuffer !== null}
+            onContinue={(s) => navigate(`/solo/${s.id}/studio`)}
+          />
+        }
+      />
+      <Route
+        path="/solo/:sceneId/studio"
+        element={
+          <SceneRoute
+            needMic
+            render={(s, original) => (
+              <Studio
+                scene={s}
+                originalBuffer={original}
+                backgroundBuffer={backgroundBuffer}
+                mic={mic!}
+                takes={takes}
+                onTake={recordTake}
+                onWrap={() => navigate(`/solo/${s.id}/screening`)}
+              />
+            )}
+          />
+        }
+      />
+      <Route
+        path="/solo/:sceneId/screening"
+        element={
+          <SceneRoute
+            render={(s, original) => (
+              <Screening
+                scene={s}
+                originalBuffer={original}
+                backgroundBuffer={backgroundBuffer}
+                vocalsBuffer={vocalsBuffer}
+                takes={takes}
+                onBackToStudio={() => navigate(`/solo/${s.id}/studio`)}
+                onNewScene={backToSelect}
+              />
+            )}
+          />
+        }
+      />
+      <Route path="*" element={<Navigate to="/" replace />} />
+    </Routes>
+  );
+}
+
+function CastRoute({
+  scene,
+  ready,
+  onContinue,
+}: {
+  scene: Scene | null;
+  ready: boolean;
+  onContinue: (scene: Scene) => void;
+}) {
+  const { sceneId } = useParams();
+  if (!scene || scene.id !== sceneId) return <Navigate to="/solo" replace />;
+  return (
+    <CastingSplash scene={scene} ready={ready} onContinue={() => onContinue(scene)} />
+  );
 }

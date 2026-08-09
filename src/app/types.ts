@@ -36,7 +36,5 @@ export type Take = {
   buffer?: AudioBuffer;
 };
 
-export type SoloPhase = "landing" | "select" | "cast" | "studio" | "screening";
-
 export const sceneAssetUrl = (sceneId: string, file: string) =>
   `/scenes/${sceneId}/${file}`;
