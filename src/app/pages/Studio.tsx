@@ -180,7 +180,7 @@ export default function Studio({
   const isCountdown = transport.kind === "countdown";
 
   return (
-    <div className="min-h-screen p-6 relative">
+    <div className="min-h-screen p-4 relative">
       <BgBlobs />
       <main className="relative z-10 max-w-5xl mx-auto grid grid-cols-1 lg:grid-cols-[280px_1fr] gap-6 items-start">
         {/* Left rail — line checklist */}
@@ -234,7 +234,7 @@ export default function Studio({
         </Card>
 
         {/* Center — focused line */}
-        <Card active className="p-6 md:p-8 flex flex-col gap-6 relative overflow-hidden order-1 lg:order-none">
+        <Card active className="p-4 md:p-5 flex flex-col gap-3 relative overflow-hidden order-1 lg:order-none">
           {isCountdown && (
             <div className="absolute inset-0 z-20 bg-background/80 backdrop-blur-sm flex items-center justify-center">
               <span className="font-display font-extrabold text-9xl text-secondary-container animate-ping-slow">
@@ -252,7 +252,7 @@ export default function Studio({
             </span>
           </div>
 
-          <p className="font-display font-bold text-3xl md:text-4xl leading-snug text-center py-2">
+          <p className="font-display font-bold text-xl md:text-2xl leading-snug text-center">
             “{line.text}”
           </p>
 
@@ -264,7 +264,7 @@ export default function Studio({
               muted
               playsInline
               preload="auto"
-              className="w-full rounded-md border-2 border-outline-variant"
+              className="mx-auto w-auto max-w-full max-h-[34vh] rounded-md border-2 border-outline-variant"
             />
             <div className="relative h-3 bg-surface-container-lowest rounded-full border-2 border-outline-variant">
               {scene.lines.map((l) => (
@@ -320,6 +320,7 @@ export default function Studio({
               }`}
             >
               <Waveform
+                className="w-full h-20"
                 original={originalBuffer}
                 startMs={line.startMs}
                 endMs={line.endMs}
@@ -353,14 +354,14 @@ export default function Studio({
           </div>
 
           {/* Transport */}
-          <div className="flex items-center justify-center gap-4 pt-2">
+          <div className="flex items-center justify-center gap-4">
             {isRecording ? (
-              <NeonButton variant="danger" onClick={() => void finishRecording()} className="py-4 px-10 text-base">
-                <Icon name="stop" className="text-2xl" /> Stop
+              <NeonButton variant="danger" onClick={() => void finishRecording()} className="py-3 px-8">
+                <Icon name="stop" className="text-xl" /> Stop
               </NeonButton>
             ) : (
-              <NeonButton variant="danger" onClick={beginRecording} disabled={isCountdown} className="py-4 px-10 text-base">
-                <Icon name="fiber_manual_record" className="text-2xl" />
+              <NeonButton variant="danger" onClick={beginRecording} disabled={isCountdown} className="py-3 px-8">
+                <Icon name="fiber_manual_record" className="text-xl" />
                 {take?.buffer ? "Re-record" : "Record take"}
               </NeonButton>
             )}
