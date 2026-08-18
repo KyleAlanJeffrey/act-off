@@ -121,6 +121,10 @@ export function sceneEditorApi(): Plugin {
                 "--no-playlist",
                 // YouTube extraction wants a JS runtime; node is what runs this server
                 "--js-runtimes", `node:${process.execPath}`,
+                // The default clients 403/DRM on some videos (PO-token/SABR
+                // experiments); the safari web clients download reliably with
+                // curl-cffi impersonation available.
+                "--extractor-args", "youtube:player_client=web_safari,web_embedded",
                 // A small explicit set — a wildcard like "en.*" matches every
                 // auto-translated variant and rate-limits the captions endpoint.
                 "--write-subs", "--write-auto-subs",
