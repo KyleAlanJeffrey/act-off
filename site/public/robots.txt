@@ -1,0 +1,4 @@
+User-agent: *
+Allow: /
+
+Sitemap: https://dub-off.com/sitemap.xml

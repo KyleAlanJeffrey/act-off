@@ -1,0 +1,12 @@
+// Dub-Off marketing/SEO site — static assets only, no worker script.
+// Owns the root domain; the game deploys separately as "dub-off-app"
+// (see ../app) and gets the app. subdomain.
+{
+  "$schema": "node_modules/wrangler/config-schema.json",
+  "name": "dub-off",
+  "compatibility_date": "2026-08-01",
+  "assets": {
+    "directory": "./public",
+    "not_found_handling": "404-page"
+  }
+}

@@ -5,10 +5,10 @@ dist/
 *.tsbuildinfo
 
 # Scene media is user-supplied (movie clips) — keep it out of the public repo.
-# Pack definitions (scenes/packs/*.json) and the scene index are tracked;
+# Pack definitions (app/scenes/packs/*.json) and the scene index are tracked;
 # the transcoded media they produce is not.
-public/scenes/*
-!public/scenes/index.json
+app/public/scenes/*
+!app/public/scenes/index.json
 
 # Raw source material (clips, subtitle rips)
 movies/

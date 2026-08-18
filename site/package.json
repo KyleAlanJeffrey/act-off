@@ -1,0 +1,13 @@
+{
+  "name": "dub-off-site",
+  "private": true,
+  "version": "0.0.1",
+  "description": "Static SEO landing page for Dub-Off. The game itself lives in ../app.",
+  "scripts": {
+    "dev": "wrangler dev --port 8788",
+    "deploy": "wrangler deploy"
+  },
+  "devDependencies": {
+    "wrangler": "^4.30.0"
+  }
+}

@@ -30,10 +30,24 @@ so it's also the first-playable milestone.
 final cut as a video file. Runs fully client-side. Party mode (lobby + Favorite Voice voting) is next — the Worker/API
 scaffolding is in place, the Durable Object isn't built yet.
 
+## Repo layout — two separate apps
+
+| Directory | What it is | Deploys as |
+|---|---|---|
+| [app/](app/) | The game itself (React + Vite SPA on a Worker) | `dub-off-app` → app.dub-off.com |
+| [site/](site/) | Static SEO landing page (plain HTML, no framework) | `dub-off` → dub-off.com |
+
+Each has its own `package.json` and `wrangler.jsonc` — they share nothing and deploy
+independently. Until the custom domain is wired up in the Cloudflare dashboard, the
+site's "Play now" links (hardcoded to app.dub-off.com in `site/public/index.html`)
+should be pointed at the app's workers.dev URL.
+
 ```bash
-npm install
-npm run dev        # local dev (Vite + Workers runtime)
-npm run deploy     # build + wrangler deploy
+npm --prefix app install
+npm run dev            # the game, on :5173 (Vite + Workers runtime)
+npm run dev:site       # the landing page, on :8788 (wrangler dev)
+npm run deploy:app     # build + deploy the game
+npm run deploy:site    # deploy the landing page
 ```
 
 ## Docs
@@ -71,10 +85,10 @@ Scenes are "dub packs" under `public/scenes/<id>/`: `clip.mp4` + `original.m4a` 
 `cues.json` (per-line character, text, start/end timings), listed in
 `public/scenes/index.json`.
 
-The repo tracks **pack definitions** (`scenes/packs/*.json`) but never the media —
+The repo tracks **pack definitions** (`app/scenes/packs/*.json`) but never the media —
 clips, audio, and anything in `movies/` are gitignored, same approach The Choicer Voicer
 uses with its community dub packs. The reference example is the *Revenge of the Sith*
-["You turned her against me!" pack](scenes/packs/star-wars-turned-her.json); after
+["You turned her against me!" pack](app/scenes/packs/star-wars-turned-her.json); after
 cloning, point `scene:pack` at your own clip of the scene to build its media locally.
 
 1. Get the scene as a video file on disk (put it in `movies/`, which stays out of git).
@@ -83,19 +97,19 @@ cloning, point `scene:pack` at your own clip of the scene to build its media loc
 2. Draft the line list **from subtitles** — no hand-scrubbing timings:
 
 ```bash
-npm run scene:subs -- ~/Movies/your-clip.mp4 ~/Movies/your-subs.srt scenes/packs/my-scene.json
+npm --prefix app run scene:subs -- ~/Movies/your-clip.mp4 ~/Movies/your-subs.srt scenes/packs/my-scene.json
 ```
 
    Pass a video + `.srt`/`.vtt` (external subs win), a video alone (extracts its
    embedded subtitle track), or a subtitle file alone. Speaker prefixes ("VADER: …", "- LEIA: …") become characters automatically;
    dual-speaker cues are split. Then edit the draft: assign any `FILL_IN` lines,
    delete lines you don't want, set `id`/`title`.
-   (No subs? Copy [scenes/packs/star-wars-turned-her.json](scenes/packs/star-wars-turned-her.json)
+   (No subs? Copy [app/scenes/packs/star-wars-turned-her.json](app/scenes/packs/star-wars-turned-her.json)
    as a starting point and fill in timings by scrubbing in QuickTime/VLC.)
 3. Build it:
 
 ```bash
-npm run scene:pack -- ~/Movies/your-clip.mp4 scenes/packs/my-scene.json
+npm --prefix app run scene:pack -- ~/Movies/your-clip.mp4 scenes/packs/my-scene.json
 ```
 
 4. Refresh — the scene appears in the picker. `trim.startMs/endMs` cuts extra footage;

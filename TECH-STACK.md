@@ -109,19 +109,25 @@ public-domain scenes you ship + user-uploaded private packs.
 
 ## Project layout
 
+Two fully separate apps — the SEO landing page and the game deploy as
+independent Workers (site → dub-off.com, game → app.dub-off.com):
+
 ```
 dub-off/
-  wrangler.jsonc
-  src/
-    worker/
-      index.ts       # API routes, R2 access, DO export
-      lobby-do.ts    # Durable Object: state machine, WebSocket handling
-    app/
-      pages/         # see PAGE-PROMPTS.md
-      lib/ws.ts      # typed WebSocket client
-      lib/audio.ts   # MediaRecorder capture, Web Audio scheduled playback
-      lib/waveform.ts# wavesurfer helpers (regions per line)
-  scenes/            # dub packs (cues.json + media) + upload script → R2
+  site/              # static SEO landing page (plain HTML, assets-only Worker "dub-off")
+    wrangler.jsonc
+    public/index.html
+  app/               # the game (Worker "dub-off-app")
+    wrangler.jsonc
+    src/
+      worker/
+        index.ts     # API routes, R2 access, DO export
+        lobby-do.ts  # Durable Object: state machine, WebSocket handling
+      app/
+        pages/       # see PAGE-PROMPTS.md
+        lib/ws.ts    # typed WebSocket client
+        lib/audio.ts # MediaRecorder capture, Web Audio scheduled playback
+    scenes/          # dub-pack build tools + pack definitions
 ```
 
 ## API sketch

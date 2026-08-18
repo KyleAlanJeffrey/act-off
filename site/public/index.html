@@ -1,0 +1,372 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Dub-Off — Re-voice Famous Movie Scenes With Your Own Voice</title>
+  <meta name="description" content="Dub-Off is a free browser party game where you re-record the dialogue of famous movie scenes line by line with your own voice, then watch your dub over the real footage. Solo mode out now." />
+  <link rel="canonical" href="https://dub-off.com/" />
+  <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
+
+  <meta property="og:type" content="website" />
+  <meta property="og:site_name" content="Dub-Off" />
+  <meta property="og:title" content="Dub-Off — Re-voice famous movie scenes" />
+  <meta property="og:description" content="Record over movie dialogue line by line with your own voice, keep the film's real music underneath, and watch your cut. Free, in your browser." />
+  <meta property="og:url" content="https://dub-off.com/" />
+  <meta name="twitter:card" content="summary" />
+  <meta name="twitter:title" content="Dub-Off — Re-voice famous movie scenes" />
+  <meta name="twitter:description" content="Record over movie dialogue line by line with your own voice, then watch your dub over the real footage. Free, in your browser." />
+
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@graph": [
+      {
+        "@type": "WebApplication",
+        "name": "Dub-Off",
+        "url": "https://dub-off.com/",
+        "applicationCategory": "GameApplication",
+        "operatingSystem": "Web browser (desktop)",
+        "offers": { "@type": "Offer", "price": "0", "priceCurrency": "USD" },
+        "description": "A browser party game where players re-record the dialogue of famous movie scenes line by line with their own voices, then watch the dubbed scene back."
+      },
+      {
+        "@type": "FAQPage",
+        "mainEntity": [
+          {
+            "@type": "Question",
+            "name": "What is Dub-Off?",
+            "acceptedAnswer": { "@type": "Answer", "text": "Dub-Off is a free browser game where you re-voice famous movie scenes. You hear each original line, record your own take over the muted clip, and then watch the whole scene back with your voice swapped in — the film's music and ambience stay underneath." }
+          },
+          {
+            "@type": "Question",
+            "name": "What do I need to play?",
+            "acceptedAnswer": { "@type": "Answer", "text": "A desktop browser and a microphone. There's no account, no install, and no upload — everything records and plays back on your machine." }
+          },
+          {
+            "@type": "Question",
+            "name": "Can I play with friends?",
+            "acceptedAnswer": { "@type": "Answer", "text": "Solo Show — where one player voices every character — is out now. Party mode, with a lobby, one character per player, and a Favorite Voice vote, is in the works." }
+          },
+          {
+            "@type": "Question",
+            "name": "Can I keep my dub?",
+            "acceptedAnswer": { "@type": "Answer", "text": "Yes. After the screening you can download your cut as a video file or share it straight from the browser." }
+          }
+        ]
+      }
+    ]
+  }
+  </script>
+
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Syne:wght@700;800&family=Quicksand:wght@500;600;700&display=swap" rel="stylesheet" />
+
+  <style>
+    :root {
+      --bg: #100f2f;
+      --on-bg: #e2dfff;
+      --surface-low: #181838;
+      --surface: #1c1c3c;
+      --surface-high: #272747;
+      --surface-highest: #313153;
+      --muted: #d4c0d7;
+      --outline: #514255;
+      --pink: #ecb2ff;
+      --pink-hot: #bd00ff;
+      --on-pink: #520071;
+      --cyan: #00eefc;
+      --on-cyan: #00363a;
+      --lime: #94db00;
+      --on-lime: #223600;
+      --gold: #ffd54a;
+      --display: "Syne", sans-serif;
+      --body: "Quicksand", sans-serif;
+    }
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    html { scroll-behavior: smooth; }
+    body {
+      background: var(--bg);
+      color: var(--on-bg);
+      font-family: var(--body);
+      font-weight: 500;
+      overflow-x: hidden;
+    }
+    ::selection { background: var(--pink-hot); color: #fff; }
+
+    .wrap { max-width: 1060px; margin: 0 auto; padding: 0 24px; }
+
+    /* ---- Ambient blobs ---- */
+    .blob {
+      position: fixed; border-radius: 50%; filter: blur(110px);
+      mix-blend-mode: screen; pointer-events: none; z-index: 0;
+      animation: blob-pulse 9s ease-in-out infinite;
+    }
+    .blob.p { width: 480px; height: 480px; background: rgba(189,0,255,.28); top: -120px; left: -120px; }
+    .blob.c { width: 420px; height: 420px; background: rgba(0,238,252,.16); bottom: -140px; right: -100px; animation-delay: -4s; }
+    @keyframes blob-pulse { 0%,100% { opacity:.5; transform:scale(1); } 50% { opacity:.75; transform:scale(1.08); } }
+
+    /* ---- Header ---- */
+    header {
+      position: relative; z-index: 2;
+      display: flex; align-items: center; justify-content: space-between;
+      max-width: 1060px; margin: 0 auto; padding: 22px 24px;
+    }
+    .wordmark { font-family: var(--display); font-weight: 800; font-size: 22px; letter-spacing: -.02em; text-decoration: none; color: var(--on-bg); text-transform: uppercase; }
+    .wordmark b { color: var(--lime); }
+
+    .btn {
+      display: inline-flex; align-items: center; gap: 10px; justify-content: center;
+      font-family: var(--body); font-weight: 700; text-transform: uppercase; letter-spacing: .08em;
+      border-radius: 999px; border: 3px solid transparent; text-decoration: none; cursor: pointer;
+      transition: transform .2s ease, box-shadow .2s ease;
+    }
+    .btn:hover { transform: translateY(-2px) scale(1.02); }
+    .btn-lime { background: var(--lime); color: var(--on-lime); box-shadow: 0 0 32px rgba(148,219,0,.4); }
+    .btn-ghost { border-color: var(--outline); color: var(--muted); }
+    .btn-sm { font-size: 12px; padding: 10px 22px; }
+    .btn-lg { font-size: 16px; padding: 20px 44px; }
+
+    /* ---- Hero ---- */
+    .hero { position: relative; z-index: 1; text-align: center; padding: 72px 24px 40px; }
+    .hero h1 {
+      font-family: var(--display); font-weight: 800; text-transform: uppercase;
+      font-size: clamp(64px, 12vw, 132px); letter-spacing: -.045em; line-height: .95;
+    }
+    .hero h1 span { display: inline-block; opacity: 0; animation: rise .55s cubic-bezier(.2,.9,.3,1.4) forwards; }
+    .hero h1 .lime { color: var(--lime); }
+    .hero h1 span:hover { transform: rotate(-6deg) scale(1.1); transition: transform .25s; }
+    @keyframes rise { from { opacity: 0; transform: translateY(38px) rotate(4deg); } to { opacity: 1; transform: none; } }
+
+    .tagline {
+      font-family: var(--display); font-weight: 700; font-size: clamp(20px, 3vw, 28px);
+      color: var(--muted); margin-top: 26px; line-height: 1.3;
+      opacity: 0; animation: fade .7s ease .55s forwards;
+    }
+    .tagline em { font-style: normal; color: var(--pink); display: block; }
+    @keyframes fade { to { opacity: 1; } }
+
+    .hero-cta { margin-top: 38px; opacity: 0; animation: fade .7s ease .75s forwards; }
+    .hero-note { margin-top: 16px; font-size: 14px; color: var(--muted); opacity: 0; animation: fade .7s ease .9s forwards; }
+    .hero-note b { color: var(--cyan); }
+
+    /* ---- Waveform divider: original (cyan) vs your take (pink) ---- */
+    .wave { display: flex; gap: 5px; align-items: center; justify-content: center; height: 130px; margin: 56px auto 0; max-width: 900px; padding: 0 24px; }
+    .wave i { flex: 1; max-width: 14px; display: flex; flex-direction: column; gap: 3px; }
+    .wave i::before, .wave i::after {
+      content: ""; display: block; border-radius: 99px;
+      height: calc(var(--h) * 52px); background: var(--cyan); align-self: stretch;
+      animation: bounce 2.6s ease-in-out infinite; animation-delay: var(--t);
+      transform-origin: bottom;
+    }
+    .wave i::after { background: var(--pink-hot); height: calc(var(--h2) * 52px); transform-origin: top; }
+    @keyframes bounce { 0%,100% { transform: scaleY(.55); } 50% { transform: scaleY(1); } }
+    .wave-caption { text-align: center; font-size: 12px; font-weight: 700; text-transform: uppercase; letter-spacing: .18em; color: var(--muted); margin-top: 14px; }
+    .wave-caption .c { color: var(--cyan); } .wave-caption .p { color: var(--pink); }
+
+    /* ---- Sections ---- */
+    section { position: relative; z-index: 1; padding: 76px 0; }
+    .kicker { display: block; text-align: center; font-size: 12px; font-weight: 700; text-transform: uppercase; letter-spacing: .22em; color: var(--cyan); margin-bottom: 14px; }
+    h2 { font-family: var(--display); font-weight: 800; text-transform: uppercase; letter-spacing: -.02em; font-size: clamp(30px, 4.6vw, 44px); text-align: center; line-height: 1.05; }
+
+    .steps { display: grid; grid-template-columns: repeat(3, 1fr); gap: 22px; margin-top: 44px; }
+    @media (max-width: 760px) { .steps { grid-template-columns: 1fr; } }
+    .step {
+      background: rgba(39,39,71,.9); border: 3px solid var(--outline); border-radius: 24px;
+      padding: 30px 26px; position: relative;
+    }
+    .step:nth-child(2) { transform: rotate(1.2deg); }
+    .step:nth-child(1) { transform: rotate(-1.2deg); }
+    .step:nth-child(3) { transform: rotate(-.8deg); }
+    .step .n {
+      position: absolute; top: -22px; left: 22px;
+      font-family: var(--display); font-weight: 800; font-size: 15px;
+      padding: 6px 16px; border-radius: 999px;
+    }
+    .step:nth-child(1) .n { background: var(--pink-hot); color: #fff; box-shadow: 0 0 24px rgba(189,0,255,.45); }
+    .step:nth-child(2) .n { background: var(--cyan); color: var(--on-cyan); box-shadow: 0 0 24px rgba(0,238,252,.35); }
+    .step:nth-child(3) .n { background: var(--lime); color: var(--on-lime); box-shadow: 0 0 24px rgba(148,219,0,.4); }
+    .step .art { font-size: 42px; margin-bottom: 14px; }
+    .step h3 { font-family: var(--display); font-weight: 700; font-size: 20px; text-transform: uppercase; margin-bottom: 10px; }
+    .step p { color: var(--muted); font-size: 15px; line-height: 1.55; }
+
+    /* ---- Feature list ---- */
+    .features { display: grid; grid-template-columns: repeat(2, 1fr); gap: 22px; margin-top: 44px; }
+    @media (max-width: 760px) { .features { grid-template-columns: 1fr; } }
+    .feat {
+      border: 3px solid var(--outline); border-radius: 24px; padding: 26px;
+      background: rgba(24,24,56,.85); display: flex; gap: 18px; align-items: flex-start;
+      transition: border-color .25s, box-shadow .25s;
+    }
+    .feat:hover { border-color: var(--cyan); box-shadow: 0 0 24px rgba(0,238,252,.25); }
+    .feat .ico {
+      flex: none; width: 52px; height: 52px; border-radius: 50%; font-size: 24px;
+      display: grid; place-items: center; background: var(--surface-highest); border: 3px solid var(--outline);
+    }
+    .feat h3 { font-family: var(--display); font-weight: 700; font-size: 17px; text-transform: uppercase; margin-bottom: 8px; }
+    .feat h3 small { display: inline-block; vertical-align: 2px; margin-left: 8px; font-family: var(--body); font-size: 10px; letter-spacing: .14em; background: var(--pink-hot); color: #fff; border-radius: 99px; padding: 3px 10px; }
+    .feat p { color: var(--muted); font-size: 14.5px; line-height: 1.55; }
+
+    /* ---- FAQ ---- */
+    .faq { max-width: 720px; margin: 40px auto 0; display: flex; flex-direction: column; gap: 14px; }
+    details {
+      border: 3px solid var(--outline); border-radius: 20px; background: rgba(28,28,60,.9);
+      padding: 18px 22px; transition: border-color .25s;
+    }
+    details[open] { border-color: var(--pink-hot); box-shadow: 0 0 24px rgba(189,0,255,.25); }
+    summary { cursor: pointer; font-weight: 700; font-size: 16px; list-style: none; display: flex; justify-content: space-between; align-items: center; gap: 12px; }
+    summary::-webkit-details-marker { display: none; }
+    summary::after { content: "+"; font-family: var(--display); font-weight: 800; font-size: 22px; color: var(--lime); transition: transform .2s; }
+    details[open] summary::after { transform: rotate(45deg); }
+    details p { margin-top: 12px; color: var(--muted); font-size: 15px; line-height: 1.6; }
+
+    /* ---- Final CTA ---- */
+    .finale { text-align: center; padding-bottom: 96px; }
+    .finale .btn-lg { margin-top: 34px; }
+
+    /* ---- Footer ---- */
+    footer { position: relative; z-index: 1; border-top: 3px solid var(--outline); padding: 30px 0 40px; }
+    footer .wrap { display: flex; flex-wrap: wrap; gap: 14px; align-items: center; justify-content: space-between; }
+    footer p { color: var(--muted); font-size: 13px; line-height: 1.6; max-width: 560px; }
+    footer a { color: var(--cyan); text-decoration: none; font-weight: 700; }
+    footer a:hover { text-decoration: underline; }
+
+    @media (prefers-reduced-motion: reduce) {
+      .hero h1 span, .tagline, .hero-cta, .hero-note { animation: none; opacity: 1; }
+      .wave i::before, .wave i::after, .blob { animation: none; }
+    }
+  </style>
+</head>
+<body>
+  <div class="blob p"></div>
+  <div class="blob c"></div>
+
+  <header>
+    <a class="wordmark" href="/">Dub-<b>Off</b></a>
+    <a class="btn btn-lime btn-sm" href="https://app.dub-off.com">Play now</a>
+  </header>
+
+  <main>
+    <div class="hero">
+      <h1 aria-label="Dub-Off">
+        <span style="animation-delay:.05s">D</span><span style="animation-delay:.1s">U</span><span style="animation-delay:.15s">B</span><span style="animation-delay:.2s">-</span><span class="lime" style="animation-delay:.25s">O</span><span class="lime" style="animation-delay:.3s">F</span><span class="lime" style="animation-delay:.35s">F</span>
+      </h1>
+      <p class="tagline">Re-voice famous movie scenes with your own voice.<em>Line by line. Badly.</em></p>
+      <div class="hero-cta">
+        <a class="btn btn-lime btn-lg" href="https://app.dub-off.com">🎬 Play free in your browser</a>
+      </div>
+      <p class="hero-note">Desktop + a <b>mic</b>. No account, no install — your recordings never leave your machine.</p>
+
+      <div class="wave" aria-hidden="true">
+        <i style="--h:.5;--h2:.4;--t:0s"></i><i style="--h:.8;--h2:.7;--t:-.2s"></i><i style="--h:.45;--h2:.6;--t:-.4s"></i><i style="--h:.9;--h2:.5;--t:-.6s"></i><i style="--h:.6;--h2:.9;--t:-.8s"></i><i style="--h:1;--h2:.65;--t:-1s"></i><i style="--h:.5;--h2:.8;--t:-1.2s"></i><i style="--h:.75;--h2:.45;--t:-1.4s"></i><i style="--h:.4;--h2:.7;--t:-1.6s"></i><i style="--h:.85;--h2:1;--t:-1.8s"></i><i style="--h:.55;--h2:.5;--t:-2s"></i><i style="--h:.95;--h2:.75;--t:-2.2s"></i><i style="--h:.5;--h2:.9;--t:-2.4s"></i><i style="--h:.7;--h2:.4;--t:-.3s"></i><i style="--h:.45;--h2:.85;--t:-.9s"></i><i style="--h:.9;--h2:.6;--t:-1.5s"></i><i style="--h:.6;--h2:.75;--t:-2.1s"></i><i style="--h:.8;--h2:.5;--t:-.7s"></i><i style="--h:.5;--h2:.95;--t:-1.3s"></i><i style="--h:.75;--h2:.55;--t:-1.9s"></i>
+      </div>
+      <p class="wave-caption"><span class="c">▲ The original</span> · <span class="p">▼ Your take</span></p>
+    </div>
+
+    <section id="how">
+      <div class="wrap">
+        <span class="kicker">How a dub goes down</span>
+        <h2>Three steps to movie stardom</h2>
+        <div class="steps">
+          <article class="step">
+            <span class="n">Act 1</span>
+            <div class="art">🎭</div>
+            <h3>Get cast</h3>
+            <p>Pick a scene from the library. In Solo Show, tonight the part of <strong>everyone</strong> will be played by you — every character, every line.</p>
+          </article>
+          <article class="step">
+            <span class="n">Act 2</span>
+            <div class="art">🎙️</div>
+            <h3>Record your lines</h3>
+            <p>Hear the real delivery, watch the clip roll, and record over the original's waveform line by line. Match it perfectly — or don't. Retakes are free.</p>
+          </article>
+          <article class="step">
+            <span class="n">Act 3</span>
+            <div class="art">🍿</div>
+            <h3>Watch the dub</h3>
+            <p>The premiere plays your voice over the real footage with the film's own score underneath. Download your cut or share it straight from the browser.</p>
+          </article>
+        </div>
+      </div>
+    </section>
+
+    <section id="features">
+      <div class="wrap">
+        <span class="kicker">Why it slaps</span>
+        <h2>The movie stays. The voices go.</h2>
+        <div class="features">
+          <article class="feat">
+            <div class="ico">🎼</div>
+            <div>
+              <h3>The real score stays under your voice</h3>
+              <p>AI source separation strips the original dialogue but keeps the music and ambience, so your take lands inside the actual scene — not over silence.</p>
+            </div>
+          </article>
+          <article class="feat">
+            <div class="ico">📈</div>
+            <div>
+              <h3>Dub over the original waveform</h3>
+              <p>Every line shows the original performance's waveform with yours mirrored beneath it — chase the shape of the delivery, or ignore it for comedy.</p>
+            </div>
+          </article>
+          <article class="feat">
+            <div class="ico">💾</div>
+            <div>
+              <h3>Keep your cut</h3>
+              <p>Export the finished dub as a video file, or share it right from the end card. Takes auto-save locally, so a closed tab never loses your work.</p>
+            </div>
+          </article>
+          <article class="feat">
+            <div class="ico">🎉</div>
+            <div>
+              <h3>Party mode <small>Coming soon</small></h3>
+              <p>A lobby of friends, one character each, a synced premiere, and a vote for the round's Favorite Voice. Solo Show is playable today.</p>
+            </div>
+          </article>
+        </div>
+      </div>
+    </section>
+
+    <section id="faq">
+      <div class="wrap">
+        <span class="kicker">Before you audition</span>
+        <h2>Questions from the cast</h2>
+        <div class="faq">
+          <details>
+            <summary>What is Dub-Off?</summary>
+            <p>A free browser game where you re-voice famous movie scenes. You hear each original line, record your own take over the muted clip, and watch the whole scene back with your voice swapped in — the film's music stays underneath.</p>
+          </details>
+          <details>
+            <summary>What do I need to play?</summary>
+            <p>A desktop browser and a microphone. No account, no install, nothing uploaded — recording and playback all happen on your machine.</p>
+          </details>
+          <details>
+            <summary>Can I play with friends?</summary>
+            <p>Solo Show — one player voices every character — is out now. Party mode with a lobby, one character per player, and a Favorite Voice vote is in the works.</p>
+          </details>
+          <details>
+            <summary>Can I keep my dub?</summary>
+            <p>Yes — after the screening, download your cut as a video file or share it straight from the browser.</p>
+          </details>
+        </div>
+      </div>
+    </section>
+
+    <section class="finale">
+      <div class="wrap">
+        <span class="kicker">Lights up</span>
+        <h2>The scene is waiting.<br />So is your terrible accent.</h2>
+        <a class="btn btn-lime btn-lg" href="https://app.dub-off.com">🎤 Start your Solo Show</a>
+      </div>
+    </section>
+  </main>
+
+  <footer>
+    <div class="wrap">
+      <p>Dub-Off is a fan-made parody playground. Scene packs are built locally from clips you already have — no copyrighted media is distributed, and no affiliation with any studio is implied.</p>
+      <a href="https://github.com/KyleAlanJeffrey/act-off">GitHub ↗</a>
+    </div>
+  </footer>
+</body>
+</html>
