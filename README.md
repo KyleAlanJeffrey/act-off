@@ -50,6 +50,27 @@ npm run deploy:app     # build + deploy the game
 npm run deploy:site    # deploy the landing page
 ```
 
+### CI deploys (Workers Builds)
+
+Both workers deploy automatically on push via the Cloudflare dashboard's GitHub
+integration (Workers → Create → Import a repository). One worker per app:
+
+| | `dub-off` (site) | `dub-off-app` (game) |
+|---|---|---|
+| Root directory | `site` | `app` |
+| Build command | *(empty)* | `npm run build` |
+| Deploy command | `npx wrangler deploy` | `npx wrangler deploy` |
+
+Scene media never goes through git (it's ignored), so the deployed worker serves
+`/scenes/*` from the **dub-off-scenes R2 bucket** when a file isn't in the build.
+After building a pack locally, push its media once:
+
+```bash
+npm --prefix app run scene:push
+```
+
+Local dev never touches R2 — the files in `app/public/scenes/` are served directly.
+
 ## Docs
 
 | File | What it is |
