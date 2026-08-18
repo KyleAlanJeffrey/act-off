@@ -119,6 +119,8 @@ export function sceneEditorApi(): Plugin {
                 "-f", "bv*[height<=720]+ba/b[height<=720]/b",
                 "--merge-output-format", "mp4",
                 "--no-playlist",
+                // YouTube extraction wants a JS runtime; node is what runs this server
+                "--js-runtimes", `node:${process.execPath}`,
                 "--write-subs", "--write-auto-subs",
                 "--sub-langs", "en.*,en",
                 "--convert-subs", "srt",
