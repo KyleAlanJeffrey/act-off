@@ -1,6 +1,9 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { parseSubtitles, slugify } from "../lib/subtitles";
 import type { DraftCharacter, DraftLine } from "../lib/subtitles";
+import { audioCtx } from "../lib/audio";
+import EditorTimeline from "../components/EditorTimeline";
+import type { Peaks, Trim } from "../components/EditorTimeline";
 import { BgBlobs, Card, Chip, Icon, NeonButton } from "../components/ui";
 
 type Meta = { id: string; title: string; tagline: string; sourceUrl: string };
@@ -29,10 +32,13 @@ export default function Editor({ onBack }: { onBack: () => void }) {
   const [characters, setCharacters] = useState<DraftCharacter[]>([]);
   const [lines, setLines] = useState<DraftLine[]>([]);
   const [sel, setSel] = useState<number>(-1);
-  const [trimToDialogue, setTrimToDialogue] = useState(true);
+  const [trim, setTrim] = useState<Trim | null>(null);
   const [playhead, setPlayhead] = useState(0);
   const [duration, setDuration] = useState(0);
   const [playing, setPlaying] = useState(false);
+  const [peaks, setPeaks] = useState<Peaks | null>(null);
+  const [zoomMs, setZoomMs] = useState(10000);
+  const [viewStart, setViewStart] = useState(0);
   const [ytUrl, setYtUrl] = useState("");
   const [busy, setBusy] = useState<"" | "fetch" | "build" | "push">("");
   const [log, setLog] = useState("");
@@ -62,7 +68,7 @@ export default function Editor({ onBack }: { onBack: () => void }) {
         setMeta(d.meta ?? meta);
         setCharacters(d.characters ?? []);
         setLines(d.lines ?? []);
-        setTrimToDialogue(d.trimToDialogue ?? true);
+        setTrim(d.trim ?? null);
         setRestored(true);
       }
     } catch {
@@ -72,29 +78,77 @@ export default function Editor({ onBack }: { onBack: () => void }) {
   }, []);
   useEffect(() => {
     const t = setTimeout(() => {
-      localStorage.setItem(DRAFT_KEY, JSON.stringify({ meta, characters, lines, trimToDialogue }));
+      localStorage.setItem(DRAFT_KEY, JSON.stringify({ meta, characters, lines, trim }));
     }, 400);
     return () => clearTimeout(t);
-  }, [meta, characters, lines, trimToDialogue]);
+  }, [meta, characters, lines, trim]);
 
-  // ---- Playhead tracking + segment stop ----
+  // ---- Playhead tracking + segment stop + view follow ----
   useEffect(() => {
     let raf = 0;
     const tick = () => {
       const v = videoRef.current;
       if (v) {
-        setPlayhead(v.currentTime * 1000);
+        const ms = v.currentTime * 1000;
+        setPlayhead(ms);
         setPlaying(!v.paused);
-        if (stopAtRef.current !== null && v.currentTime * 1000 >= stopAtRef.current) {
+        if (stopAtRef.current !== null && ms >= stopAtRef.current) {
           v.pause();
           stopAtRef.current = null;
+        }
+        // Keep the zoom window trailing the playhead during playback
+        if (!v.paused) {
+          setViewStart((vs) =>
+            ms > vs + zoomMs * 0.92 || ms < vs ? Math.max(0, ms - zoomMs * 0.1) : vs
+          );
         }
       }
       raf = requestAnimationFrame(tick);
     };
     raf = requestAnimationFrame(tick);
     return () => cancelAnimationFrame(raf);
-  }, []);
+  }, [zoomMs]);
+
+  // ---- Decode the clip's audio into waveform peaks for the timeline ----
+  useEffect(() => {
+    if (!source) {
+      setPeaks(null);
+      return;
+    }
+    let cancelled = false;
+    (async () => {
+      setPeaks(null);
+      try {
+        const bytes =
+          source.kind === "file"
+            ? await source.file.arrayBuffer()
+            : await (await fetch(source.url)).arrayBuffer();
+        const buf = await audioCtx().decodeAudioData(bytes);
+        const binMs = 20;
+        const perBin = Math.max(1, Math.round(buf.sampleRate * (binMs / 1000)));
+        const bins = new Float32Array(Math.ceil(buf.length / perBin));
+        const stride = Math.max(1, Math.floor(perBin / 60));
+        for (let c = 0; c < Math.min(2, buf.numberOfChannels); c++) {
+          const data = buf.getChannelData(c);
+          for (let i = 0; i < data.length; i += stride) {
+            const a = Math.abs(data[i]);
+            const b = Math.floor(i / perBin);
+            if (a > bins[b]) bins[b] = a;
+          }
+        }
+        const max = bins.reduce((m, v) => (v > m ? v : m), 0) || 1;
+        for (let i = 0; i < bins.length; i++) bins[i] /= max;
+        if (!cancelled) setPeaks({ bins, binMs });
+      } catch {
+        // No decodable audio track — the timeline still works, just without
+        // a waveform. Empty peaks mean "done, nothing to draw".
+        if (!cancelled) setPeaks({ bins: new Float32Array(0), binMs: 20 });
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [source]);
 
   useEffect(() => {
     logRef.current?.scrollTo(0, logRef.current.scrollHeight);
@@ -103,6 +157,10 @@ export default function Editor({ onBack }: { onBack: () => void }) {
   const seek = (ms: number) => {
     const v = videoRef.current;
     if (v) v.currentTime = Math.max(0, ms) / 1000;
+    // Bring the zoom window along when the target is off-screen
+    setViewStart((vs) =>
+      ms < vs || ms > vs + zoomMs ? Math.max(0, ms - zoomMs * 0.3) : vs
+    );
   };
   const togglePlay = () => {
     const v = videoRef.current;
@@ -140,6 +198,10 @@ export default function Editor({ onBack }: { onBack: () => void }) {
       if (e.code === "Space") {
         e.preventDefault();
         togglePlay();
+      } else if (e.key === "ArrowLeft" || e.key === "ArrowRight") {
+        e.preventDefault();
+        const step = (e.shiftKey ? 100 : 1000) * (e.key === "ArrowLeft" ? -1 : 1);
+        seek(playhead + step);
       } else if (sel >= 0 && (e.key === "i" || e.key === "I")) {
         updateLine(sel, { startMs: Math.round(playhead) });
       } else if (sel >= 0 && (e.key === "o" || e.key === "O")) {
@@ -182,6 +244,11 @@ export default function Editor({ onBack }: { onBack: () => void }) {
       tagline: pack.tagline ?? "",
       sourceUrl: pack.sourceUrl ?? "",
     });
+    setTrim(
+      typeof pack.trim?.startMs === "number" && typeof pack.trim?.endMs === "number"
+        ? { startMs: pack.trim.startMs, endMs: pack.trim.endMs }
+        : null
+    );
     setCharacters(pack.characters ?? []);
     setLines(
       (pack.lines ?? []).map((l: DraftLine) => ({
@@ -279,22 +346,21 @@ export default function Editor({ onBack }: { onBack: () => void }) {
       if (!l.text.trim()) errs.push(`Line ${i + 1} has no text.`);
       if (!charIds.has(l.characterId)) errs.push(`Line ${i + 1} needs a character.`);
       if (l.startMs >= l.endMs) errs.push(`Line ${i + 1}: start must be before end.`);
+      if (trim && (l.startMs < trim.startMs || l.endMs > trim.endMs)) {
+        errs.push(`Line ${i + 1} is outside the trim range.`);
+      }
     });
     return errs;
-  }, [meta, characters, lines]);
+  }, [meta, characters, lines, trim]);
 
   const buildPack = () => {
     const sorted = [...lines].sort((a, b) => a.startMs - b.startMs);
-    const first = sorted[0]?.startMs ?? 0;
-    const last = sorted[sorted.length - 1]?.endMs ?? 0;
     return {
       id: meta.id,
       title: meta.title.trim(),
       tagline: meta.tagline.trim(),
       ...(meta.sourceUrl.trim() ? { sourceUrl: meta.sourceUrl.trim() } : {}),
-      ...(trimToDialogue
-        ? { trim: { startMs: Math.max(0, first - 2000), endMs: last + 2000 } }
-        : {}),
+      ...(trim ? { trim: { startMs: Math.round(trim.startMs), endMs: Math.round(trim.endMs) } } : {}),
       characters,
       lines: sorted.map(({ characterId, text, startMs, endMs }) => ({
         characterId,
@@ -463,38 +529,72 @@ export default function Editor({ onBack }: { onBack: () => void }) {
                   className="mx-auto w-auto max-w-full max-h-[38vh] rounded-md border-2 border-outline-variant cursor-pointer bg-black"
                 />
 
-                {/* Timeline: click to seek, segments select their line */}
+                {/* Overview: the whole clip, with the zoom window marked */}
                 <div
-                  className="relative h-8 bg-surface-container-lowest rounded-md border-2 border-outline-variant cursor-crosshair"
+                  className="relative h-4 bg-surface-container-lowest rounded-md border-2 border-outline-variant cursor-crosshair overflow-hidden"
                   onClick={(e) => {
                     const r = e.currentTarget.getBoundingClientRect();
                     seek(((e.clientX - r.left) / r.width) * duration);
                   }}
                 >
                   {lines.map((l, i) => (
-                    <button
+                    <div
                       key={i}
-                      title={l.text}
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        setSel(i);
-                        seek(l.startMs);
-                      }}
-                      className="absolute top-1 bottom-1 rounded-sm cursor-pointer"
+                      className="absolute top-0.5 bottom-0.5 rounded-xs pointer-events-none"
                       style={{
                         left: `${(l.startMs / Math.max(1, duration)) * 100}%`,
                         width: `${Math.max(0.4, ((l.endMs - l.startMs) / Math.max(1, duration)) * 100)}%`,
                         background: charColor(l.characterId),
-                        opacity: i === sel ? 1 : 0.45,
-                        outline: i === sel ? "2px solid #e2dfff" : "none",
+                        opacity: i === sel ? 1 : 0.5,
                       }}
                     />
                   ))}
+                  {trim && (
+                    <>
+                      <div
+                        className="absolute top-0 bottom-0 left-0 bg-background/70 pointer-events-none"
+                        style={{ width: `${(trim.startMs / Math.max(1, duration)) * 100}%` }}
+                      />
+                      <div
+                        className="absolute top-0 bottom-0 right-0 bg-background/70 pointer-events-none"
+                        style={{ width: `${Math.max(0, 100 - (trim.endMs / Math.max(1, duration)) * 100)}%` }}
+                      />
+                    </>
+                  )}
+                  <div
+                    className="absolute top-0 bottom-0 border-2 border-on-surface/60 rounded-sm pointer-events-none"
+                    style={{
+                      left: `${Math.min(100, (viewStart / Math.max(1, duration)) * 100)}%`,
+                      width: `${Math.min(100 - Math.min(100, (viewStart / Math.max(1, duration)) * 100), (zoomMs / Math.max(1, duration)) * 100)}%`,
+                    }}
+                  />
                   <div
                     className="absolute top-0 bottom-0 w-0.5 bg-error pointer-events-none"
                     style={{ left: `${(playhead / Math.max(1, duration)) * 100}%` }}
                   />
                 </div>
+
+                {/* Zoomed waveform: drag edges to retime, drag body to move,
+                    drag empty space to scrub, wheel to zoom/pan */}
+                <EditorTimeline
+                  peaks={peaks}
+                  durationMs={duration}
+                  playheadMs={playhead}
+                  lines={lines}
+                  sel={sel}
+                  viewStartMs={viewStart}
+                  zoomMs={zoomMs}
+                  trim={trim}
+                  charColor={charColor}
+                  onSeek={seek}
+                  onSelect={setSel}
+                  onChangeLine={updateLine}
+                  onChangeTrim={setTrim}
+                  onView={(vs, z) => {
+                    setViewStart(vs);
+                    if (z !== undefined) setZoomMs(z);
+                  }}
+                />
 
                 {/* Transport + selected-line timing bar */}
                 <div className="flex items-center gap-3 flex-wrap text-sm">
@@ -502,6 +602,17 @@ export default function Editor({ onBack }: { onBack: () => void }) {
                     <Icon name={playing ? "pause_circle" : "play_circle"} className="text-4xl" />
                   </button>
                   <span className="font-bold tabular-nums">{fmt(playhead)} / {fmt(duration)}</span>
+                  <span className="inline-flex items-center gap-1">
+                    <button onClick={() => setZoomMs((z) => Math.max(1500, z / 1.6))} className="ed-minibtn cursor-pointer" title="Zoom in">
+                      <Icon name="zoom_in" className="text-base" />
+                    </button>
+                    <button onClick={() => setZoomMs((z) => Math.min(duration || 60000, z * 1.6))} className="ed-minibtn cursor-pointer" title="Zoom out">
+                      <Icon name="zoom_out" className="text-base" />
+                    </button>
+                    <button onClick={() => { setZoomMs(duration || 60000); setViewStart(0); }} className="ed-minibtn cursor-pointer" title="Fit whole clip">
+                      <Icon name="fit_width" className="text-base" />
+                    </button>
+                  </span>
                   {selLine ? (
                     <div className="flex items-center gap-2 flex-wrap ml-auto">
                       <Chip color="cyan">Line {sel + 1}</Chip>
@@ -532,10 +643,60 @@ export default function Editor({ onBack }: { onBack: () => void }) {
               <input value={meta.id} onChange={(e) => setMeta({ ...meta, id: e.target.value })} placeholder="scene-id (kebab-case)" className="ed-input font-mono text-sm" />
               <input value={meta.tagline} onChange={(e) => setMeta({ ...meta, tagline: e.target.value })} placeholder="Tagline (shows on the card)" className="ed-input" />
               <input value={meta.sourceUrl} onChange={(e) => setMeta({ ...meta, sourceUrl: e.target.value })} placeholder="Source URL (YouTube link)" className="ed-input text-sm" />
-              <label className="flex items-center gap-2 text-sm text-on-surface-variant cursor-pointer">
-                <input type="checkbox" checked={trimToDialogue} onChange={(e) => setTrimToDialogue(e.target.checked)} />
-                Trim clip to dialogue (±2s)
-              </label>
+              <div className="flex flex-col gap-1.5">
+                <p className="text-xs text-on-surface-variant">
+                  <span className="font-bold uppercase tracking-widest text-gold">Trim</span>{" "}
+                  {trim ? (
+                    <>keeps <span className="tabular-nums font-bold">{fmt(trim.startMs)} → {fmt(trim.endMs)}</span> — drag the gold handles</>
+                  ) : (
+                    "— whole clip ships. Set a range or use Auto."
+                  )}
+                </p>
+                <div className="flex gap-2 flex-wrap">
+                  <button
+                    className="ed-minibtn cursor-pointer"
+                    disabled={!source}
+                    onClick={() =>
+                      setTrim((t) => ({
+                        startMs: Math.round(Math.min(playhead, (t?.endMs ?? duration) - 1000)),
+                        endMs: t?.endMs ?? Math.round(duration),
+                      }))
+                    }
+                  >
+                    ⌖ start here
+                  </button>
+                  <button
+                    className="ed-minibtn cursor-pointer"
+                    disabled={!source}
+                    onClick={() =>
+                      setTrim((t) => ({
+                        startMs: t?.startMs ?? 0,
+                        endMs: Math.round(Math.max(playhead, (t?.startMs ?? 0) + 1000)),
+                      }))
+                    }
+                  >
+                    ⌖ end here
+                  </button>
+                  <button
+                    className="ed-minibtn cursor-pointer"
+                    disabled={lines.length === 0}
+                    onClick={() => {
+                      const sorted = [...lines].sort((a, b) => a.startMs - b.startMs);
+                      setTrim({
+                        startMs: Math.max(0, sorted[0].startMs - 2000),
+                        endMs: Math.round(Math.min(duration || Infinity, sorted[sorted.length - 1].endMs + 2000)),
+                      });
+                    }}
+                  >
+                    Auto (dialogue ±2s)
+                  </button>
+                  {trim && (
+                    <button className="ed-minibtn cursor-pointer" onClick={() => setTrim(null)}>
+                      Clear
+                    </button>
+                  )}
+                </div>
+              </div>
               <div className="flex gap-2 flex-wrap pt-1">
                 <label className="ed-minibtn cursor-pointer">
                   <Icon name="subtitles" className="text-base" /> Import subs
@@ -613,7 +774,11 @@ export default function Editor({ onBack }: { onBack: () => void }) {
           {lines.map((l, i) => (
             <div
               key={i}
-              onClick={() => setSel(i)}
+              onClick={(e) => {
+                setSel(i);
+                const t = (e.target as HTMLElement).tagName;
+                if (t !== "INPUT" && t !== "SELECT" && t !== "BUTTON") seek(l.startMs);
+              }}
               className={`grid grid-cols-[auto_auto_1fr_auto_auto_auto] items-center gap-2 rounded-md border-2 px-2 py-1.5 cursor-pointer ${
                 i === sel ? "border-secondary-container bg-secondary-container/10" : "border-transparent hover:bg-surface-container-highest"
               }`}
