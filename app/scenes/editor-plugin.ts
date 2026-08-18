@@ -121,9 +121,13 @@ export function sceneEditorApi(): Plugin {
                 "--no-playlist",
                 // YouTube extraction wants a JS runtime; node is what runs this server
                 "--js-runtimes", `node:${process.execPath}`,
+                // A small explicit set — a wildcard like "en.*" matches every
+                // auto-translated variant and rate-limits the captions endpoint.
                 "--write-subs", "--write-auto-subs",
-                "--sub-langs", "en.*,en",
+                "--sub-langs", "en,en-orig,en-US,en-GB",
                 "--convert-subs", "srt",
+                // Caption failures (429s happen) shouldn't kill the video download
+                "--ignore-errors",
                 "--no-simulate", "--print", "before_dl:__TITLE__ %(title)s",
                 "-o", join(dir, "source.%(ext)s"),
                 target,
@@ -149,7 +153,12 @@ export function sceneEditorApi(): Plugin {
                 }
                 const token = randomUUID();
                 uploads.set(token, join(dir, video));
-                const srt = files.find((f) => f.endsWith(".srt"));
+                // Prefer plain "en" (manual subs when they exist) over ASR variants
+                const srts = files.filter((f) => f.endsWith(".srt"));
+                const srt =
+                  srts.find((f) => f.endsWith(".en.srt")) ??
+                  srts.find((f) => !f.includes("-orig")) ??
+                  srts[0];
                 if (srt) subs.set(token, readFileSync(join(dir, srt), "utf8"));
                 res.end(
                   `\n__RESULT__ ${JSON.stringify({ token, title, hasSubs: !!srt })}\n__EXIT__ 0\n`

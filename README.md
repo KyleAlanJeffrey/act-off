@@ -110,7 +110,7 @@ Scenes are "dub packs" under `public/scenes/<id>/`: `clip.mp4` + `original.m4a` 
 
 Run the dev server and open **`/editor`** (or the "Build a scene" card in the scene
 picker). Load a video file — or **paste a YouTube link** (needs
-`brew install yt-dlp`), which also pulls the video's subtitles/auto-captions to seed
+`uv tool install "yt-dlp[default,curl-cffi]"`), which also pulls the video's subtitles/auto-captions to seed
 the line list. Then edit visually: scrub the video, select a line, hit **I**/**O**
 to mark its in/out points at the playhead, preview any line instantly, assign
 characters, and press **Build scene** — the dev server runs the ffmpeg + demucs

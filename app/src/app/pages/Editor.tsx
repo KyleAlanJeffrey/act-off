@@ -434,7 +434,9 @@ export default function Editor({ onBack }: { onBack: () => void }) {
                   </div>
                 ) : builder ? (
                   <p className="text-xs text-on-surface-variant">
-                    Want to paste YouTube links? <code className="text-secondary-container">brew install yt-dlp</code> and restart the dev server.
+                    Want to paste YouTube links?{" "}
+                    <code className="text-secondary-container">uv tool install "yt-dlp[default,curl-cffi]"</code>{" "}
+                    and restart the dev server.
                   </p>
                 ) : null}
               </div>
