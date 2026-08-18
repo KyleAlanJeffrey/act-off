@@ -11,6 +11,7 @@ import SceneSelect from "./pages/SceneSelect";
 import CastingSplash from "./pages/CastingSplash";
 import Studio from "./pages/Studio";
 import Screening from "./pages/Screening";
+import Editor from "./pages/Editor";
 
 export default function App() {
   const navigate = useNavigate();
@@ -148,9 +149,11 @@ export default function App() {
             onMicReady={setMic}
             onPick={pickScene}
             onBack={() => navigate("/")}
+            onBuild={() => navigate("/editor")}
           />
         }
       />
+      <Route path="/editor" element={<Editor onBack={() => navigate("/solo")} />} />
       <Route
         path="/solo/:sceneId/cast"
         element={

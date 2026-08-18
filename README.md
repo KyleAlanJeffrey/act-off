@@ -106,6 +106,22 @@ Scenes are "dub packs" under `public/scenes/<id>/`: `clip.mp4` + `original.m4a` 
 `cues.json` (per-line character, text, start/end timings), listed in
 `public/scenes/index.json`.
 
+### The scene editor (the easy way)
+
+Run the dev server and open **`/editor`** (or the "Build a scene" card in the scene
+picker). Load a video file — or **paste a YouTube link** (needs
+`brew install yt-dlp`), which also pulls the video's subtitles/auto-captions to seed
+the line list. Then edit visually: scrub the video, select a line, hit **I**/**O**
+to mark its in/out points at the playhead, preview any line instantly, assign
+characters, and press **Build scene** — the dev server runs the ffmpeg + demucs
+pipeline and the scene lands in the picker. **Push to R2** afterward makes it
+available to CI deploys. Drafts autosave to localStorage.
+
+The build API only exists in local dev; production builds of the editor fall back
+to exporting the pack.json for the CLI flow below.
+
+### The CLI (what the editor drives)
+
 The repo tracks **pack definitions** (`app/scenes/packs/*.json`) but never the media —
 clips, audio, and anything in `movies/` are gitignored, same approach The Choicer Voicer
 uses with its community dub packs. The reference example is the *Revenge of the Sith*

@@ -11,9 +11,10 @@ type Props = {
   onMicReady: (mic: MicSession) => void;
   onPick: (scene: Scene) => void;
   onBack: () => void;
+  onBuild: () => void;
 };
 
-export default function SceneSelect({ scenes, mic, onMicReady, onPick, onBack }: Props) {
+export default function SceneSelect({ scenes, mic, onMicReady, onPick, onBack, onBuild }: Props) {
   const [micError, setMicError] = useState<string | null>(null);
   const [level, setLevel] = useState(0);
   const [savedCounts, setSavedCounts] = useState<Map<string, number>>(new Map());
@@ -128,7 +129,15 @@ export default function SceneSelect({ scenes, mic, onMicReady, onPick, onBack }:
               dimmed={!mic}
             />
           ))}
-          <SceneCard locked onPick={() => {}} dimmed={!mic} />
+          <button onClick={onBuild} className="text-left cursor-pointer group">
+            <Card className="p-6 flex flex-col items-center justify-center gap-3 min-h-52 h-full border-dashed group-hover:border-secondary-container group-hover:glow-secondary">
+              <Icon name="movie_edit" className="text-3xl text-secondary-container" />
+              <p className="text-sm font-bold uppercase tracking-wider">Build a scene</p>
+              <p className="text-xs text-on-surface-variant text-center">
+                Video or YouTube link + subtitles → dub pack, right in the browser.
+              </p>
+            </Card>
+          </button>
           <SceneCard locked onPick={() => {}} dimmed={!mic} />
         </div>
         {!mic && (
