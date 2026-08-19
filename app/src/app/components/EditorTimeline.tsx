@@ -1,4 +1,4 @@
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 import type { DraftLine } from "../lib/subtitles";
 
 export type Peaks = { bins: Float32Array; binMs: number };
@@ -32,6 +32,26 @@ const EDGE_PX = 7;
 const MIN_LINE_MS = 100;
 
 /**
+ * Overlapping lines (characters singing/talking at once) stack into lanes so
+ * each stays visible and draggable. Greedy interval coloring: earliest start
+ * takes the first lane whose previous occupant has ended.
+ */
+function computeLanes(lines: DraftLine[]): { lane: number[]; count: number } {
+  const order = lines
+    .map((_, i) => i)
+    .sort((a, b) => lines[a].startMs - lines[b].startMs || a - b);
+  const lane = new Array<number>(lines.length).fill(0);
+  const laneEnds: number[] = [];
+  for (const i of order) {
+    let k = laneEnds.findIndex((end) => lines[i].startMs >= end);
+    if (k === -1) k = laneEnds.push(-Infinity) - 1;
+    lane[i] = k;
+    laneEnds[k] = lines[i].endMs;
+  }
+  return { lane, count: Math.max(1, laneEnds.length) };
+}
+
+/**
  * The precision timeline: a zoomed window of the clip's audio waveform with
  * the lines drawn on top. Drag a line's edge to retime it against the audio,
  * drag the selected line's body to move it, drag empty space to scrub,
@@ -55,6 +75,15 @@ export default function EditorTimeline({
 }: Props) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const dragRef = useRef<Drag | null>(null);
+  // The first draw can land before layout (clientWidth 0) — redraw on resize
+  const [sizeTick, setSizeTick] = useState(0);
+  useEffect(() => {
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+    const ro = new ResizeObserver(() => setSizeTick((t) => t + 1));
+    ro.observe(canvas);
+    return () => ro.disconnect();
+  }, []);
   // Extras that must be readable inside pointer handlers without re-binding
   const stateRef = useRef({ viewStartMs, zoomMs, lines, sel, durationMs, trim });
   stateRef.current = { viewStartMs, zoomMs, lines, sel, durationMs, trim };
@@ -115,34 +144,38 @@ export default function EditorTimeline({
       ctx.fillText(label, x + 3, 11);
     }
 
-    // Lines
+    // Lines — overlapping ones stack into lanes so both stay visible
+    const { lane, count } = computeLanes(lines);
+    const bandH = (H - 6) / count;
     lines.forEach((l, i) => {
       if (l.endMs < viewStartMs || l.startMs > viewEnd) return;
       const x1 = xOf(l.startMs);
       const x2 = xOf(l.endMs);
+      const y = 3 + lane[i] * bandH;
+      const bh = bandH - (count > 1 ? 2 : 0);
       const color = charColor(l.characterId);
       const active = i === sel;
       ctx.fillStyle = color + (active ? "55" : "2e");
-      ctx.fillRect(x1, 3, x2 - x1, H - 6);
+      ctx.fillRect(x1, y, x2 - x1, bh);
       ctx.strokeStyle = color;
       ctx.lineWidth = active ? 2 : 1;
-      ctx.strokeRect(x1, 3, x2 - x1, H - 6);
+      ctx.strokeRect(x1, y, x2 - x1, bh);
       // Edge handles on the selected line
       if (active) {
         ctx.fillStyle = "#e2dfff";
-        ctx.fillRect(x1 - 1.5, 3, 3, H - 6);
-        ctx.fillRect(x2 - 1.5, 3, 3, H - 6);
+        ctx.fillRect(x1 - 1.5, y, 3, bh);
+        ctx.fillRect(x2 - 1.5, y, 3, bh);
       }
       // Labels only where they have room — at low zoom they just collide
-      if (x2 - x1 > 44) {
+      if (x2 - x1 > 44 && bh > 14) {
         ctx.fillStyle = active ? "#e2dfff" : "rgba(226,223,255,.7)";
         ctx.font = "700 10px Quicksand, sans-serif";
         const label = `${i + 1}. ${l.text}`;
         ctx.save();
         ctx.beginPath();
-        ctx.rect(x1 + 3, 3, Math.max(0, x2 - x1 - 6), H - 6);
+        ctx.rect(x1 + 3, y, Math.max(0, x2 - x1 - 6), bh);
         ctx.clip();
-        ctx.fillText(label, x1 + 5, H - 9);
+        ctx.fillText(label, x1 + 5, y + bh - 6);
         ctx.restore();
       }
     });
@@ -177,7 +210,7 @@ export default function EditorTimeline({
       ctx.lineTo(px, 7);
       ctx.fill();
     }
-  }, [peaks, durationMs, playheadMs, lines, sel, viewStartMs, zoomMs, trim, charColor]);
+  }, [peaks, durationMs, playheadMs, lines, sel, viewStartMs, zoomMs, trim, charColor, sizeTick]);
 
   // ---- Interaction ----
   const msAt = (clientX: number) => {
@@ -186,17 +219,26 @@ export default function EditorTimeline({
     const { viewStartMs: vs, zoomMs: z } = stateRef.current;
     return vs + ((clientX - r.left) / r.width) * z;
   };
+  // Vertical position as a 0..1 fraction of the lane strip, for stacked lines
+  const yFracAt = (clientY: number) => {
+    const r = canvasRef.current!.getBoundingClientRect();
+    return Math.max(0, Math.min(1, (clientY - r.top - 3) / Math.max(1, r.height - 6)));
+  };
   const pxPerMs = () => {
     const canvas = canvasRef.current!;
     return canvas.getBoundingClientRect().width / stateRef.current.zoomMs;
   };
 
-  const hitTest = (ms: number): Drag => {
+  const hitTest = (ms: number, yFrac: number): Drag => {
     const { lines: ls, sel: s, trim: t } = stateRef.current;
     const tolMs = EDGE_PX / pxPerMs();
-    // Selected line's edges win, then any line's edges
+    const { lane, count } = computeLanes(ls);
+    const inBand = (i: number) => yFrac >= lane[i] / count && yFrac <= (lane[i] + 1) / count;
+    // Selected line's edges win, then any line's edges — within its own lane,
+    // so duplicated (same-window) lines stay individually grabbable
     const order = s >= 0 ? [s, ...ls.map((_, i) => i).filter((i) => i !== s)] : ls.map((_, i) => i);
     for (const i of order) {
+      if (!inBand(i)) continue;
       if (Math.abs(ls[i].startMs - ms) < tolMs) return { kind: "edge", line: i, edge: "startMs" };
       if (Math.abs(ls[i].endMs - ms) < tolMs) return { kind: "edge", line: i, edge: "endMs" };
     }
@@ -205,7 +247,7 @@ export default function EditorTimeline({
       if (Math.abs(t.endMs - ms) < tolMs) return { kind: "trim", edge: "endMs" };
     }
     for (const i of order) {
-      if (ms >= ls[i].startMs && ms <= ls[i].endMs) {
+      if (inBand(i) && ms >= ls[i].startMs && ms <= ls[i].endMs) {
         return i === s ? { kind: "move", line: i, grabMs: ms - ls[i].startMs } : { kind: "scrub" };
       }
     }
@@ -219,10 +261,15 @@ export default function EditorTimeline({
       // synthetic events have no active pointer — dragging still works via bubbling
     }
     const ms = msAt(e.clientX);
+    const yFrac = yFracAt(e.clientY);
     const { lines: ls, sel: s } = stateRef.current;
-    const hit = hitTest(ms);
+    const hit = hitTest(ms, yFrac);
     // Clicking an unselected line selects it (and scrubs there)
-    const under = ls.findIndex((l) => ms >= l.startMs && ms <= l.endMs);
+    const { lane, count } = computeLanes(ls);
+    const under = ls.findIndex(
+      (l, i) =>
+        ms >= l.startMs && ms <= l.endMs && yFrac >= lane[i] / count && yFrac <= (lane[i] + 1) / count
+    );
     if (hit.kind === "scrub" && under !== -1 && under !== s) onSelect(under);
     if (hit.kind === "edge" && hit.line !== s) onSelect(hit.line);
     dragRef.current = hit;
@@ -234,7 +281,7 @@ export default function EditorTimeline({
     const ms = msAt(e.clientX);
     const drag = dragRef.current;
     if (!drag) {
-      const hit = hitTest(ms);
+      const hit = hitTest(ms, yFracAt(e.clientY));
       canvas.style.cursor =
         hit.kind === "edge" || hit.kind === "trim"
           ? "ew-resize"

@@ -189,6 +189,11 @@ export default function Editor({ onBack }: { onBack: () => void }) {
     setSel(lines.length);
   };
   const sortLines = () => setLines((prev) => [...prev].sort((a, b) => a.startMs - b.startMs));
+  // Same timing window on purpose — characters singing/talking over each other.
+  const duplicateLine = (i: number) => {
+    setLines((prev) => [...prev.slice(0, i + 1), { ...prev[i] }, ...prev.slice(i + 1)]);
+    setSel(i + 1);
+  };
 
   // Keyboard: space play/pause, I/O set in/out on the selected line
   useEffect(() => {
@@ -779,7 +784,7 @@ export default function Editor({ onBack }: { onBack: () => void }) {
                 const t = (e.target as HTMLElement).tagName;
                 if (t !== "INPUT" && t !== "SELECT" && t !== "BUTTON") seek(l.startMs);
               }}
-              className={`grid grid-cols-[auto_auto_1fr_auto_auto_auto] items-center gap-2 rounded-md border-2 px-2 py-1.5 cursor-pointer ${
+              className={`grid grid-cols-[auto_auto_1fr_auto_auto_auto_auto] items-center gap-2 rounded-md border-2 px-2 py-1.5 cursor-pointer ${
                 i === sel ? "border-secondary-container bg-secondary-container/10" : "border-transparent hover:bg-surface-container-highest"
               }`}
             >
@@ -810,6 +815,13 @@ export default function Editor({ onBack }: { onBack: () => void }) {
                 title="Preview"
               >
                 <Icon name="play_circle" className="text-xl" />
+              </button>
+              <button
+                onClick={(e) => { e.stopPropagation(); duplicateLine(i); }}
+                className="text-on-surface-variant hover:text-secondary cursor-pointer"
+                title="Duplicate — for characters singing the same lines together"
+              >
+                <Icon name="content_copy" className="text-xl" />
               </button>
               <button
                 onClick={(e) => {
