@@ -115,7 +115,9 @@ the line list. Then edit visually: scrub the video, select a line, hit **I**/**O
 to mark its in/out points at the playhead, preview any line instantly, assign
 characters, and press **Build scene** — the dev server runs the ffmpeg + demucs
 pipeline and the scene lands in the picker. **Push to R2** afterward makes it
-available to CI deploys. Drafts autosave to localStorage.
+available to CI deploys. Drafts autosave to localStorage, and **Save draft**
+keeps named snapshots you can come back to — a draft made from a YouTube link
+remembers the URL and re-fetches its video when reopened.
 
 The build API only exists in local dev; production builds of the editor fall back
 to exporting the pack.json for the CLI flow below.

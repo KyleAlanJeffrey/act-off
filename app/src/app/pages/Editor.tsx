@@ -2,6 +2,8 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { parseSubtitles, slugify } from "../lib/subtitles";
 import type { DraftCharacter, DraftLine } from "../lib/subtitles";
 import { audioCtx } from "../lib/audio";
+import { deleteDraft, listDrafts, upsertDraft } from "../lib/draftsStore";
+import type { SavedDraft } from "../lib/draftsStore";
 import EditorTimeline from "../components/EditorTimeline";
 import type { Peaks, Trim } from "../components/EditorTimeline";
 import { BgBlobs, Card, Chip, Icon, NeonButton } from "../components/ui";
@@ -45,6 +47,8 @@ export default function Editor({ onBack }: { onBack: () => void }) {
   const [builtId, setBuiltId] = useState<string | null>(null);
   const [restored, setRestored] = useState(false);
   const [newChar, setNewChar] = useState("");
+  const [drafts, setDrafts] = useState<SavedDraft[]>(() => listDrafts());
+  const [draftSaved, setDraftSaved] = useState(false);
 
   const videoRef = useRef<HTMLVideoElement>(null);
   const stopAtRef = useRef<number | null>(null);
@@ -297,15 +301,16 @@ export default function Editor({ onBack }: { onBack: () => void }) {
     return { code, result };
   };
 
-  const fetchYouTube = async () => {
-    if (!ytUrl.trim()) return;
+  const fetchYouTube = async (urlArg?: string) => {
+    const target = (urlArg ?? ytUrl).trim();
+    if (!target) return;
     setBusy("fetch");
     setLog("");
     try {
       const { code, result } = await stream("/editor-api/fetch", {
         method: "POST",
         headers: { "content-type": "application/json" },
-        body: JSON.stringify({ url: ytUrl.trim() }),
+        body: JSON.stringify({ url: target }),
       });
       if (code !== 0 || !result) throw new Error("Fetch failed — see the log.");
       const token = String(result.token);
@@ -314,20 +319,26 @@ export default function Editor({ onBack }: { onBack: () => void }) {
       setBuiltId(null);
       setMeta((m) => ({
         ...m,
-        sourceUrl: ytUrl.trim(),
+        sourceUrl: target,
         title: m.title || title,
         id: m.id || slugify(title).split("-").slice(0, 5).join("-"),
       }));
       if (result.hasSubs) {
         const subsText = await (await fetch(`/editor-api/subs?token=${token}`)).text();
         const parsed = parseSubtitles(subsText);
-        if (lines.length === 0) {
-          setLines(parsed.lines);
-          setCharacters((prev) => {
-            const known = new Set(prev.map((c) => c.id));
-            return [...prev, ...parsed.characters.filter((c) => !known.has(c.id))];
-          });
-        }
+        // Functional updates — only seed when there really are no lines yet
+        // (a just-opened draft's lines must never be clobbered by subs).
+        // Updaters run in queue order, so `seeded` is set before it's read.
+        let seeded = false;
+        setLines((prev) => {
+          seeded = prev.length === 0;
+          return seeded ? parsed.lines : prev;
+        });
+        setCharacters((prev) => {
+          if (!seeded) return prev;
+          const known = new Set(prev.map((c) => c.id));
+          return [...prev, ...parsed.characters.filter((c) => !known.has(c.id))];
+        });
         setLog((p) => p + `\n✓ Subtitles loaded (${parsed.lines.length} cues).\n`);
       } else {
         setLog((p) => p + "\n⚠ No subtitles on this video — add lines by hand (I/O keys mark in/out).\n");
@@ -336,6 +347,27 @@ export default function Editor({ onBack }: { onBack: () => void }) {
       setLog((p) => p + `\n✗ ${e instanceof Error ? e.message : String(e)}\n`);
     } finally {
       setBusy("");
+    }
+  };
+
+  // ---- Saved drafts (named snapshots; YouTube drafts re-fetch their video) ----
+  const isYouTube = (url: string) => /youtube\.com|youtu\.be/.test(url);
+  const saveCurrentDraft = () => {
+    setDrafts(upsertDraft({ meta, characters, lines, trim }));
+    setDraftSaved(true);
+    setTimeout(() => setDraftSaved(false), 2000);
+  };
+  const openDraft = (d: SavedDraft) => {
+    setMeta(d.meta);
+    setCharacters(d.characters);
+    setLines(d.lines);
+    setTrim(d.trim ?? null);
+    setSel(-1);
+    setBuiltId(null);
+    setRestored(false);
+    setYtUrl(d.meta.sourceUrl && isYouTube(d.meta.sourceUrl) ? d.meta.sourceUrl : "");
+    if (d.meta.sourceUrl && isYouTube(d.meta.sourceUrl) && builder?.ytdlp) {
+      void fetchYouTube(d.meta.sourceUrl);
     }
   };
 
@@ -452,8 +484,18 @@ export default function Editor({ onBack }: { onBack: () => void }) {
         {restored && (
           <Card className="p-3 px-5 flex items-center justify-between gap-3 flex-wrap">
             <p className="text-sm text-on-surface-variant">
-              Restored your last draft{source ? "" : " — re-select the video to preview"}.
+              Restored your last draft
+              {source ? "" : meta.sourceUrl && isYouTube(meta.sourceUrl) ? "" : " — re-select the video to preview"}.
             </p>
+            {!source && meta.sourceUrl && isYouTube(meta.sourceUrl) && builder?.ytdlp && (
+              <button
+                className="text-xs font-bold uppercase tracking-wider text-secondary-container cursor-pointer hover:underline"
+                disabled={busy === "fetch"}
+                onClick={() => void fetchYouTube(meta.sourceUrl)}
+              >
+                {busy === "fetch" ? "Fetching…" : "▶ Re-fetch YouTube video"}
+              </button>
+            )}
             <button
               className="text-xs font-bold uppercase tracking-wider text-error cursor-pointer hover:underline"
               onClick={() => {
@@ -510,6 +552,45 @@ export default function Editor({ onBack }: { onBack: () => void }) {
                     and restart the dev server.
                   </p>
                 ) : null}
+                {drafts.length > 0 && (
+                  <div className="w-full max-w-lg flex flex-col gap-2 pt-4 border-t-2 border-outline-variant/40">
+                    <p className="text-xs font-bold uppercase tracking-widest text-on-surface-variant text-left">
+                      Saved drafts
+                    </p>
+                    {drafts.map((d) => (
+                      <div
+                        key={d.key}
+                        className="flex items-center gap-2 rounded-md border-2 border-outline-variant px-3 py-2 hover:border-secondary-container"
+                      >
+                        <button
+                          className="flex-1 text-left cursor-pointer min-w-0"
+                          disabled={busy === "fetch"}
+                          onClick={() => openDraft(d)}
+                          title={
+                            d.meta.sourceUrl && isYouTube(d.meta.sourceUrl)
+                              ? "Open — the YouTube video will be re-fetched"
+                              : "Open — re-select the video file to preview"
+                          }
+                        >
+                          <span className="block text-sm font-bold truncate">
+                            {d.meta.title || d.key}
+                          </span>
+                          <span className="block text-xs text-on-surface-variant">
+                            {d.lines.length} lines · {new Date(d.savedAt).toLocaleDateString()}
+                            {d.meta.sourceUrl && isYouTube(d.meta.sourceUrl) ? " · ▶ YouTube" : ""}
+                          </span>
+                        </button>
+                        <button
+                          className="text-on-surface-variant hover:text-error cursor-pointer"
+                          onClick={() => setDrafts(deleteDraft(d.key))}
+                          title="Delete draft"
+                        >
+                          <Icon name="delete" className="text-lg" />
+                        </button>
+                      </div>
+                    ))}
+                  </div>
+                )}
               </div>
             ) : (
               <>
@@ -703,6 +784,15 @@ export default function Editor({ onBack }: { onBack: () => void }) {
                 </div>
               </div>
               <div className="flex gap-2 flex-wrap pt-1">
+                <button
+                  className="ed-minibtn cursor-pointer"
+                  disabled={!meta.title.trim() && !meta.id}
+                  onClick={saveCurrentDraft}
+                  title="Save a named draft — YouTube drafts re-fetch their video when reopened"
+                >
+                  <Icon name={draftSaved ? "check" : "bookmark_add"} className="text-base" />{" "}
+                  {draftSaved ? "Saved!" : "Save draft"}
+                </button>
                 <label className="ed-minibtn cursor-pointer">
                   <Icon name="subtitles" className="text-base" /> Import subs
                   <input type="file" accept=".srt,.vtt" className="hidden" onChange={(e) => e.target.files?.[0] && void importSubs(e.target.files[0])} />
