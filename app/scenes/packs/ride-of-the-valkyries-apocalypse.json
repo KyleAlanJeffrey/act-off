@@ -1,0 +1,146 @@
+{
+  "id": "ride-of-the-valkyries-apocalypse",
+  "title": "'Ride of the Valkyries' | Apocalypse Now",
+  "tagline": "",
+  "sourceUrl": "https://www.youtube.com/watch?v=VE03Lqm3nbI",
+  "trim": {
+    "startMs": 0,
+    "endMs": 118152
+  },
+  "characters": [
+    {
+      "id": "pilot",
+      "name": "Pilot",
+      "emoji": "🎭"
+    },
+    {
+      "id": "vietnamese",
+      "name": "Vietnamese 1",
+      "emoji": "🎭"
+    },
+    {
+      "id": "solider",
+      "name": "Solider",
+      "emoji": "🎭"
+    },
+    {
+      "id": "vietnamese-solider",
+      "name": "Vietnamese Solider",
+      "emoji": "🎭"
+    },
+    {
+      "id": "vietnamese-2",
+      "name": "Vietnamese 2",
+      "emoji": "🎭"
+    },
+    {
+      "id": "vietnamese-3",
+      "name": "Vietnamese 3",
+      "emoji": "🎭"
+    }
+  ],
+  "lines": [
+    {
+      "characterId": "pilot",
+      "text": "Pulse Saw we're op",
+      "startMs": 311,
+      "endMs": 1750
+    },
+    {
+      "characterId": "pilot",
+      "text": "Make it loud",
+      "startMs": 2137,
+      "endMs": 3293
+    },
+    {
+      "characterId": "pilot",
+      "text": "This is Romeo Foxtrot, Shall we dance",
+      "startMs": 3597,
+      "endMs": 6568
+    },
+    {
+      "characterId": "solider",
+      "text": "(Any word)",
+      "startMs": 11985,
+      "endMs": 13295
+    },
+    {
+      "characterId": "pilot",
+      "text": "(Any word)",
+      "startMs": 13584,
+      "endMs": 15584
+    },
+    {
+      "characterId": "solider",
+      "text": "(Any word)",
+      "startMs": 27839,
+      "endMs": 28793
+    },
+    {
+      "characterId": "solider",
+      "text": "(whisper some words)",
+      "startMs": 58648,
+      "endMs": 61066
+    },
+    {
+      "characterId": "vietnamese",
+      "text": "(calm rabble)",
+      "startMs": 84322,
+      "endMs": 88747
+    },
+    {
+      "characterId": "vietnamese-2",
+      "text": "(calm rabble)",
+      "startMs": 87098,
+      "endMs": 91523
+    },
+    {
+      "characterId": "vietnamese-3",
+      "text": "(calm rabble)",
+      "startMs": 89802,
+      "endMs": 94227
+    },
+    {
+      "characterId": "vietnamese",
+      "text": "(calm rabble)",
+      "startMs": 89802,
+      "endMs": 94227
+    },
+    {
+      "characterId": "vietnamese-2",
+      "text": "(calm rabble)",
+      "startMs": 93249,
+      "endMs": 96874
+    },
+    {
+      "characterId": "vietnamese-3",
+      "text": "(calm rabble)",
+      "startMs": 94738,
+      "endMs": 99163
+    },
+    {
+      "characterId": "vietnamese-solider",
+      "text": "(frantic sounds)",
+      "startMs": 98349,
+      "endMs": 104114
+    },
+    {
+      "characterId": "vietnamese",
+      "text": "(frantic sounds)",
+      "startMs": 98911,
+      "endMs": 105796
+    },
+    {
+      "characterId": "vietnamese-2",
+      "text": "(frantic sounds)",
+      "startMs": 106308,
+      "endMs": 113193
+    },
+    {
+      "characterId": "vietnamese-3",
+      "text": "(frantic sounds)",
+      "startMs": 107174,
+      "endMs": 114059
+    }
+  ]
+}
