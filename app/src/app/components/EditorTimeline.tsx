@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import type { DraftLine } from "../lib/subtitles";
+import { themeColor, withAlpha } from "../lib/theme";
 
 export type Peaks = { bins: Float32Array; binMs: number };
 
@@ -103,6 +104,13 @@ export default function EditorTimeline({
     ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
     ctx.clearRect(0, 0, W, H);
 
+    // Palette from the Tailwind theme tokens — canvas and CSS share one source
+    const ink = themeColor(canvas, "--color-on-surface", "#e2dfff");
+    const wave = themeColor(canvas, "--color-secondary-container", "#00eefc");
+    const dim = themeColor(canvas, "--color-surface-container-lowest", "#0a0a2a");
+    const gold = themeColor(canvas, "--color-gold", "#ffd54a");
+    const playheadColor = themeColor(canvas, "--color-error", "#ffb4ab");
+
     const viewEnd = viewStartMs + zoomMs;
     const xOf = (ms: number) => ((ms - viewStartMs) / zoomMs) * W;
 
@@ -110,7 +118,7 @@ export default function EditorTimeline({
     // One column per CSS pixel, taking the loudest bin under it — stays a
     // crisp waveform at any zoom instead of smearing into a solid block.
     if (peaks && peaks.bins.length > 0) {
-      ctx.fillStyle = "rgba(0, 238, 252, 0.5)";
+      ctx.fillStyle = withAlpha(wave, 0.5);
       const mid = H / 2;
       for (let x = 0; x < W; x++) {
         const b0 = Math.max(0, Math.floor((viewStartMs + (x / W) * zoomMs) / peaks.binMs));
@@ -125,7 +133,7 @@ export default function EditorTimeline({
         ctx.fillRect(x, mid - h / 2, 1, h);
       }
     } else if (!peaks) {
-      ctx.fillStyle = "rgba(226, 223, 255, 0.25)";
+      ctx.fillStyle = withAlpha(ink, 0.25);
       ctx.font = "11px Quicksand, sans-serif";
       ctx.fillText("decoding audio…", 10, H / 2 + 4);
     }
@@ -136,9 +144,9 @@ export default function EditorTimeline({
     ctx.font = "10px Quicksand, sans-serif";
     for (let t = Math.ceil(viewStartMs / step) * step; t <= viewEnd; t += step) {
       const x = xOf(t);
-      ctx.fillStyle = "rgba(226, 223, 255, 0.18)";
+      ctx.fillStyle = withAlpha(ink, 0.18);
       ctx.fillRect(x, 0, 1, H);
-      ctx.fillStyle = "rgba(226, 223, 255, 0.5)";
+      ctx.fillStyle = withAlpha(ink, 0.5);
       const secs = t / 1000;
       const label = `${Math.floor(secs / 60)}:${String(Math.floor(secs % 60)).padStart(2, "0")}${step < 1000 ? `.${Math.round((secs % 1) * 10)}` : ""}`;
       ctx.fillText(label, x + 3, 11);
@@ -162,13 +170,13 @@ export default function EditorTimeline({
       ctx.strokeRect(x1, y, x2 - x1, bh);
       // Edge handles on the selected line
       if (active) {
-        ctx.fillStyle = "#e2dfff";
+        ctx.fillStyle = ink;
         ctx.fillRect(x1 - 1.5, y, 3, bh);
         ctx.fillRect(x2 - 1.5, y, 3, bh);
       }
       // Labels only where they have room — at low zoom they just collide
       if (x2 - x1 > 44 && bh > 14) {
-        ctx.fillStyle = active ? "#e2dfff" : "rgba(226,223,255,.7)";
+        ctx.fillStyle = active ? ink : withAlpha(ink, 0.7);
         ctx.font = "700 10px Quicksand, sans-serif";
         const label = `${i + 1}. ${l.text}`;
         ctx.save();
@@ -182,12 +190,12 @@ export default function EditorTimeline({
 
     // Trim: dim everything outside the kept range, gold handles at the edges
     if (trim) {
-      ctx.fillStyle = "rgba(10, 10, 42, 0.62)";
+      ctx.fillStyle = withAlpha(dim, 0.62);
       const tx1 = xOf(trim.startMs);
       const tx2 = xOf(trim.endMs);
       if (tx1 > 0) ctx.fillRect(0, 0, Math.min(tx1, W), H);
       if (tx2 < W) ctx.fillRect(Math.max(0, tx2), 0, W - tx2, H);
-      ctx.fillStyle = "#ffd54a";
+      ctx.fillStyle = gold;
       for (const tx of [tx1, tx2]) {
         if (tx < -3 || tx > W + 3) continue;
         ctx.fillRect(tx - 1.5, 0, 3, H);
@@ -202,7 +210,7 @@ export default function EditorTimeline({
     // Playhead
     const px = xOf(playheadMs);
     if (px >= 0 && px <= W) {
-      ctx.fillStyle = "#ffb4ab";
+      ctx.fillStyle = playheadColor;
       ctx.fillRect(px - 0.5, 0, 1.5, H);
       ctx.beginPath();
       ctx.moveTo(px - 5, 0);

@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useRef } from "react";
+import { themeColor, withAlpha } from "../lib/theme";
 
 type Props = {
   /** The scene's original audio; the line's slice is rendered. */
@@ -16,11 +17,6 @@ type Props = {
 };
 
 const BARS = 96;
-const ORIGINAL_COLOR = "rgba(0, 238, 252, 0.75)";
-const ORIGINAL_DIM = "rgba(0, 238, 252, 0.28)";
-const TAKE_COLOR = "rgba(236, 178, 255, 0.95)";
-const LIVE_COLOR = "rgba(255, 92, 92, 0.95)";
-const CENTER_LINE = "rgba(157, 139, 160, 0.4)";
 
 /**
  * One shared lane: the original line's waveform on the top half, your take
@@ -62,8 +58,14 @@ export default function Waveform({
     const barW = W / BARS - gap;
     g.clearRect(0, 0, W, H);
 
+    // Palette from the Tailwind theme tokens — canvas and CSS share one source
+    const originalColor = withAlpha(themeColor(canvas, "--color-secondary-container", "#00eefc"), 0.75);
+    const originalDim = withAlpha(themeColor(canvas, "--color-secondary-container", "#00eefc"), 0.28);
+    const takeColor = withAlpha(themeColor(canvas, "--color-primary", "#ecb2ff"), 0.95);
+    const liveColor = withAlpha(themeColor(canvas, "--color-recording", "#ff5c5c"), 0.95);
+
     // center line
-    g.fillStyle = CENTER_LINE;
+    g.fillStyle = withAlpha(themeColor(canvas, "--color-outline", "#9d8ba0"), 0.4);
     g.fillRect(0, mid - 0.5, W, 1);
 
     const playheadX = playheadMs === null ? null : (playheadMs / axisMs) * W;
@@ -72,7 +74,7 @@ export default function Waveform({
     for (let i = 0; i < originalPeaks.length; i++) {
       const x = i * (barW + gap);
       const played = playheadX !== null && x <= playheadX;
-      g.fillStyle = played ? ORIGINAL_COLOR : playheadX !== null ? ORIGINAL_DIM : ORIGINAL_COLOR;
+      g.fillStyle = played ? originalColor : playheadX !== null ? originalDim : originalColor;
       const h = Math.max(2, originalPeaks[i] * (mid - 6));
       g.beginPath();
       g.roundRect(x, mid - 2 - h, barW, h, barW / 2);
@@ -81,7 +83,7 @@ export default function Waveform({
 
     // bottom half: the take, or live recording levels
     if (takePeaks) {
-      g.fillStyle = TAKE_COLOR;
+      g.fillStyle = takeColor;
       for (let i = 0; i < takePeaks.length; i++) {
         const x = i * (barW + gap);
         const h = Math.max(2, takePeaks[i] * (mid - 6));
@@ -90,7 +92,7 @@ export default function Waveform({
         g.fill();
       }
     } else if (liveLevels && liveLevels.length > 0) {
-      g.fillStyle = LIVE_COLOR;
+      g.fillStyle = liveColor;
       const samplesPerBar = Math.max(1, Math.ceil((axisMs / BARS) / liveSampleMs));
       const barCount = Math.ceil(liveLevels.length / samplesPerBar);
       for (let b = 0; b < barCount; b++) {
@@ -109,7 +111,7 @@ export default function Waveform({
     // playhead
     if (playheadX !== null) {
       g.fillStyle = "#ffffff";
-      g.shadowColor = "#00eefc";
+      g.shadowColor = themeColor(canvas, "--color-secondary-container", "#00eefc");
       g.shadowBlur = 10;
       g.fillRect(playheadX - 1, 2, 2, H - 4);
       g.shadowBlur = 0;

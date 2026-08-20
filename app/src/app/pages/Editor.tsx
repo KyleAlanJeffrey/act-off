@@ -17,6 +17,9 @@ type Source = { kind: "file"; file: File; url: string; name: string } | {
 };
 type Builder = { ok: boolean; ytdlp: boolean } | null;
 
+// Per-character assignment palette (first four mirror the theme's
+// primary-container/secondary-container/tertiary/gold). Raw hex on purpose:
+// the canvas timeline derives translucent fills by appending alpha digits.
 const CHAR_COLORS = ["#bd00ff", "#00eefc", "#94db00", "#ffd54a", "#ff8a65", "#7c9eff"];
 const DRAFT_KEY = "dub-off-editor-draft";
 
@@ -883,7 +886,12 @@ export default function Editor({ onBack }: { onBack: () => void }) {
                 value={l.characterId}
                 onChange={(e) => updateLine(i, { characterId: e.target.value })}
                 className="bg-surface-container-lowest border-2 rounded-md py-1 px-1.5 text-sm max-w-36"
-                style={{ borderColor: l.characterId ? charColor(l.characterId) : "#ffb4ab" }}
+                style={{
+                  // Error border for missing *or stale* ids (deleted characters)
+                  borderColor: characters.some((c) => c.id === l.characterId)
+                    ? charColor(l.characterId)
+                    : "var(--color-error)",
+                }}
               >
                 <option value="">— who? —</option>
                 {characters.map((c) => (
@@ -980,13 +988,6 @@ export default function Editor({ onBack }: { onBack: () => void }) {
         </Card>
       </main>
 
-      <style>{`
-        .ed-input { background: var(--color-surface-container-lowest); border: 2px solid var(--color-outline-variant); border-radius: 10px; padding: 8px 12px; width: 100%; }
-        .ed-input:focus { outline: none; border-color: var(--color-secondary-container); }
-        .ed-minibtn { display: inline-flex; align-items: center; gap: 6px; font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: .08em; border: 2px solid var(--color-outline-variant); border-radius: 999px; padding: 6px 14px; color: var(--color-on-surface-variant); }
-        .ed-minibtn:hover:not(:disabled) { border-color: var(--color-secondary-container); color: var(--color-on-surface); }
-        .ed-minibtn:disabled { opacity: .35; }
-      `}</style>
     </div>
   );
 }

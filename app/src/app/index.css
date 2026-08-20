@@ -30,6 +30,8 @@
   --color-on-error: #690005;
   --color-error-container: #93000a;
   --color-gold: #ffd54a;
+  /* Live-mic red — hotter than error on purpose, it means "recording now" */
+  --color-recording: #ff5c5c;
 
   --font-display: "Syne", sans-serif;
   --font-body: "Quicksand", sans-serif;
@@ -48,6 +50,25 @@ body {
 .material-symbols-outlined {
   font-variation-settings: "FILL" 1, "wght" 500;
   user-select: none;
+}
+
+/* Scene-editor form controls (used across Editor.tsx) */
+@layer components {
+  .ed-input {
+    @apply w-full rounded-[10px] border-2 border-outline-variant bg-surface-container-lowest px-3 py-2;
+  }
+  .ed-input:focus {
+    @apply border-secondary-container outline-none;
+  }
+  .ed-minibtn {
+    @apply inline-flex items-center gap-1.5 rounded-full border-2 border-outline-variant px-3.5 py-1.5 text-[11px] font-bold uppercase tracking-[0.08em] text-on-surface-variant;
+  }
+  .ed-minibtn:hover:not(:disabled) {
+    @apply border-secondary-container text-on-surface;
+  }
+  .ed-minibtn:disabled {
+    @apply opacity-35;
+  }
 }
 
 /* Neon glow helpers */
