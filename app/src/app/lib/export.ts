@@ -44,11 +44,15 @@ export async function exportDub(input: ExportInput): Promise<Blob> {
       ...audioOut.stream.getAudioTracks(),
     ]);
 
+    // mp4 (H.264 + AAC) first — it shares/plays everywhere; WebM is the
+    // fallback for browsers that can't record mp4 (Firefox).
     const mimeType = [
+      "video/mp4;codecs=avc1.640028,mp4a.40.2",
+      "video/mp4;codecs=avc1,mp4a.40.2",
+      "video/mp4",
       "video/webm;codecs=vp9,opus",
       "video/webm;codecs=vp8,opus",
       "video/webm",
-      "video/mp4",
     ].find((m) => MediaRecorder.isTypeSupported(m));
     const recorder = new MediaRecorder(stream, {
       ...(mimeType ? { mimeType } : {}),
