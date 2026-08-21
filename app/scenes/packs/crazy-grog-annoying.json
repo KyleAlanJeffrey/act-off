@@ -1,0 +1,17 @@
+{
+  "id": "crazy-grog-annoying",
+  "title": "Crazy Frog",
+  "tagline": "the annoying thing",
+  "sourceUrl": "https://www.youtube.com/watch?v=rI6nc3aH_pI",
+  "characters": [
+    { "id": "crazy-frog", "name": "Crazy Frog", "emoji": "🎭" }
+  ],
+  "lines": [
+    {
+      "characterId": "crazy-frog",
+      "text": "(Crazy Frog Sounds)",
+      "startMs": 5455,
+      "endMs": 18412
+    }
+  ]
+}
