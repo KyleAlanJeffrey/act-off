@@ -326,6 +326,7 @@ export default function Studio({
                 endMs={line.endMs}
                 take={isRecording ? null : take?.buffer}
                 liveLevels={isRecording ? liveLevels : null}
+                liveElapsedMs={isRecording ? elapsedMs : 0}
                 playheadMs={
                   transport.kind === "playingOriginal"
                     ? origProgress * lineDurMs

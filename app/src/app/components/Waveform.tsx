@@ -11,6 +11,9 @@ type Props = {
   /** Live mic levels (0..1, one sample per `liveSampleMs`) while recording. */
   liveLevels?: number[] | null;
   liveSampleMs?: number;
+  /** Real elapsed recording time; live bars spread over this, since the
+      sampling interval drifts when the main thread is busy. */
+  liveElapsedMs?: number;
   /** Playhead position in ms on the shared axis, or null to hide. */
   playheadMs?: number | null;
   className?: string;
@@ -29,6 +32,7 @@ export default function Waveform({
   take,
   liveLevels,
   liveSampleMs = 50,
+  liveElapsedMs = 0,
   playheadMs = null,
   className,
 }: Props) {
@@ -36,8 +40,9 @@ export default function Waveform({
 
   const lineDurMs = endMs - startMs;
   const takeDurMs = take ? take.duration * 1000 : 0;
-  const liveDurMs = liveLevels ? liveLevels.length * liveSampleMs : 0;
-  const axisMs = Math.max(lineDurMs, takeDurMs, liveDurMs, 1);
+  // The axis is fixed while recording (never includes the live take) so the
+  // display doesn't re-squish on every tick; overshoot clips at the right.
+  const axisMs = Math.max(lineDurMs, takeDurMs, 1);
 
   const originalPeaks = useMemo(
     () => bufferPeaks(original, startMs, endMs, BARS * (lineDurMs / axisMs)),
@@ -68,7 +73,8 @@ export default function Waveform({
     g.fillStyle = withAlpha(themeColor(canvas, "--color-outline", "#9d8ba0"), 0.4);
     g.fillRect(0, mid - 0.5, W, 1);
 
-    const playheadX = playheadMs === null ? null : (playheadMs / axisMs) * W;
+    const playheadX =
+      playheadMs === null ? null : Math.min((playheadMs / axisMs) * W, W - 2);
 
     // top half: original
     for (let i = 0; i < originalPeaks.length; i++) {
@@ -93,19 +99,26 @@ export default function Waveform({
       }
     } else if (liveLevels && liveLevels.length > 0) {
       g.fillStyle = liveColor;
-      // Normalize to the take-so-far's own max (same floor as bufferPeaks) so
-      // the live bars match what the decoded take will look like afterward.
-      let liveNorm = 0.25;
-      for (const v of liveLevels) if (v > liveNorm) liveNorm = v;
-      const samplesPerBar = Math.max(1, Math.ceil((axisMs / BARS) / liveSampleMs));
-      const barCount = Math.ceil(liveLevels.length / samplesPerBar);
-      for (let b = 0; b < barCount; b++) {
+      // Fixed reference level, NOT the running max — bars must never rescale
+      // retroactively mid-line, that reads as broken feedback.
+      const LIVE_NORM = 0.6;
+      // Spread the samples over the real elapsed time and bin them into the
+      // same BARS grid as the original above, so live bars track the playhead.
+      const elapsed =
+        liveElapsedMs > 0 ? liveElapsedMs : liveLevels.length * liveSampleMs;
+      const msPerSample = elapsed / liveLevels.length;
+      const barMs = axisMs / BARS;
+      for (let b = 0; b < BARS; b++) {
+        const from = Math.floor((b * barMs) / msPerSample);
+        if (from >= liveLevels.length) break;
+        const to = Math.min(
+          Math.max(from + 1, Math.ceil(((b + 1) * barMs) / msPerSample)),
+          liveLevels.length
+        );
         let max = 0;
-        for (let s = b * samplesPerBar; s < Math.min((b + 1) * samplesPerBar, liveLevels.length); s++) {
-          max = Math.max(max, liveLevels[s]);
-        }
+        for (let s = from; s < to; s++) max = Math.max(max, liveLevels[s]);
         const x = b * (barW + gap);
-        const h = Math.max(2, (max / liveNorm) * (mid - 6));
+        const h = Math.max(2, Math.min(1, max / LIVE_NORM) * (mid - 6));
         g.beginPath();
         g.roundRect(x, mid + 2, barW, h, barW / 2);
         g.fill();
@@ -120,7 +133,7 @@ export default function Waveform({
       g.fillRect(playheadX - 1, 2, 2, H - 4);
       g.shadowBlur = 0;
     }
-  }, [originalPeaks, takePeaks, liveLevels, playheadMs, axisMs, liveSampleMs]);
+  }, [originalPeaks, takePeaks, liveLevels, playheadMs, axisMs, liveSampleMs, liveElapsedMs]);
 
   return (
     <canvas ref={canvasRef} width={960} height={128} className={className ?? "w-full h-24"} />
