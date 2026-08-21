@@ -334,7 +334,7 @@ export default function EditorTimeline({
     }
   };
 
-  const onWheel = (e: React.WheelEvent<HTMLCanvasElement>) => {
+  const onWheel = (e: WheelEvent) => {
     e.preventDefault();
     const { viewStartMs: vs, zoomMs: z, durationMs: dur } = stateRef.current;
     if (e.ctrlKey || e.metaKey || Math.abs(e.deltaY) > Math.abs(e.deltaX)) {
@@ -348,6 +348,18 @@ export default function EditorTimeline({
       onView(Math.max(0, Math.min((dur || 0) - z, vs + e.deltaX * (z / 1000))), z);
     }
   };
+  // React attaches onWheel passively, so its preventDefault can't stop the
+  // page from scrolling — a native non-passive listener locks scroll to the
+  // timeline while the cursor is over it.
+  const onWheelRef = useRef(onWheel);
+  onWheelRef.current = onWheel;
+  useEffect(() => {
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+    const handler = (e: WheelEvent) => onWheelRef.current(e);
+    canvas.addEventListener("wheel", handler, { passive: false });
+    return () => canvas.removeEventListener("wheel", handler);
+  }, []);
 
   return (
     <canvas
@@ -357,7 +369,6 @@ export default function EditorTimeline({
       onPointerMove={onPointerMove}
       onPointerUp={onPointerUp}
       onPointerCancel={onPointerUp}
-      onWheel={onWheel}
     />
   );
 }
