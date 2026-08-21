@@ -5,15 +5,20 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Dub-Off</title>
     <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🎬</text></svg>" />
-    <!-- Fonts are self-hosted (src/app/fonts.css + public/fonts/): no
-         fonts.googleapis.com / fonts.gstatic.com connections, which stall
-         first paint on iPhone Safari (partitioned cache + cellular RTT).
-         The icon font is subset to exactly the icons the app uses — adding
-         a new <Icon name="…"> means regenerating it (see fonts.css header).
-         Preload the latin text slices + icons so they fetch alongside CSS. -->
-    <link rel="preload" href="/fonts/text-4.woff2" as="font" type="font/woff2" crossorigin />
-    <link rel="preload" href="/fonts/text-2.woff2" as="font" type="font/woff2" crossorigin />
-    <link rel="preload" href="/fonts/icons-0.woff2" as="font" type="font/woff2" crossorigin />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Quicksand:wght@500;600;700&family=Syne:wght@700;800&display=swap"
+      rel="stylesheet"
+    />
+    <!-- Subset to exactly the icons the app uses: ~5KB instead of ~310KB.
+         Adding a new <Icon name="…"> requires appending it to icon_names
+         here, or it renders as its text name. display=block so icons are
+         briefly invisible instead of flashing ligature text. -->
+    <link
+      href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200&icon_names=add,arrow_back,arrow_forward,bookmark_add,check,check_circle,close,cloud_upload,content_copy,delete,download,fiber_manual_record,file_open,fit_width,folder_open,graphic_eq,hourglass_top,ios_share,link,lock,mic,mic_external_on,mic_off,movie,movie_edit,movie_filter,pause_circle,play_arrow,play_circle,radio_button_unchecked,replay,sort,stop,stop_circle,subtitles,theater_comedy,zoom_in,zoom_out&display=block"
+      rel="stylesheet"
+    />
   </head>
   <body>
     <div id="root"></div>
