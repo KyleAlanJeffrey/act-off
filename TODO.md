@@ -1,15 +1,18 @@
 # TODO
 
-## Up next
-- [ ] **Verify the load fix on a slow connection** — the 310KB icon font was the
-      likely culprit (now a ~5KB subset); if the landing → app hop still feels
-      slow after deploy, profile again on the affected device/network.
+*(nothing open — add items here)*
 
-## Standing
-- [ ] **Mobile compatibility pass** — audit all player-facing pages on phone
-      viewports (see CLAUDE.md); studio + screening layouts, touch targets,
-      mobile Safari mic/autoplay quirks.
 ## Done
+- [x] Load fix verified in production: CI auto-deploys are live, the app
+      serves the ~5KB icon-font subset and the landing preconnects to
+      app.dub-off.com. If it still feels slow on a specific device/network,
+      reopen with details.
+- [x] Mobile compatibility pass — audited landing / scene select / casting /
+      studio / screening at 375×812 with a stubbed mic through the full
+      record→wrap flow. Fixed: screening wrap panel no longer overlays (and
+      overflows) the short mobile video — score + actions render below it;
+      title sizes and page paddings scale down on phones; landing title stays
+      on one line. Real-device Safari check still worthwhile when convenient.
 - [x] Live waveform parity — wider analyser window + same normalization as
       the decoded take
 - [x] Voice-match scoring on the screening wrap screen (envelope correlation

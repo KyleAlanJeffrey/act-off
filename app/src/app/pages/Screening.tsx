@@ -149,13 +149,13 @@ export default function Screening({
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center p-8 relative">
+    <div className="min-h-screen flex items-center justify-center p-4 md:p-8 relative">
       <BgBlobs />
       <main className="relative z-10 max-w-4xl w-full flex flex-col gap-6">
         <header className="flex items-center justify-between">
           <div>
             <Chip color="pink" className="mb-2">The premiere</Chip>
-            <h1 className="font-display font-extrabold text-3xl uppercase tracking-tight">
+            <h1 className="font-display font-extrabold text-2xl md:text-3xl uppercase tracking-tight">
               {scene.title} <span className="text-primary">— your cut</span>
             </h1>
           </div>
@@ -187,76 +187,30 @@ export default function Screening({
               </div>
             )}
 
-            {/* Curtain / start overlay */}
+            {/* Curtain / start overlay. The wrap panel lives BELOW the video
+                (normal flow) — overlaying it clips on phones where the video
+                is much shorter than the panel. */}
             {!playing && (
               <div className="absolute inset-0 bg-background/80 backdrop-blur-sm flex flex-col items-center justify-center gap-5 rounded-md">
                 {exportProgress !== null ? (
                   <>
-                    <p className="font-display font-extrabold text-3xl uppercase text-secondary-container">
+                    <p className="font-display font-extrabold text-2xl md:text-3xl uppercase text-secondary-container text-center">
                       Rendering your cut… {Math.round(exportProgress * 100)}%
                     </p>
-                    <div className="w-72 h-2.5 bg-surface-container-lowest rounded-full border-2 border-outline-variant overflow-hidden">
+                    <div className="w-56 md:w-72 h-2.5 bg-surface-container-lowest rounded-full border-2 border-outline-variant overflow-hidden">
                       <div
                         className="h-full bg-secondary-container transition-[width] duration-200"
                         style={{ width: `${exportProgress * 100}%` }}
                       />
                     </div>
-                    <p className="text-sm text-on-surface-variant">
+                    <p className="text-sm text-on-surface-variant text-center">
                       Renders in real time — keep this tab visible.
                     </p>
                   </>
                 ) : ended ? (
-                  <>
-                    <p className="font-display font-extrabold text-4xl uppercase text-gold">That's a wrap!</p>
-                    {dubScore && (
-                      <div className="flex flex-col items-center gap-2 -mt-2">
-                        <p className="font-display font-extrabold text-2xl uppercase">
-                          Voice match:{" "}
-                          <span className="text-secondary-container">{dubScore.total}%</span>
-                        </p>
-                        <Chip color="lime">{dubScore.grade}</Chip>
-                        <div className="flex gap-1.5 flex-wrap justify-center max-w-md">
-                          {dubScore.lines.map((l) => (
-                            <span
-                              key={l.lineIndex}
-                              title={`Line ${l.lineIndex + 1}: “${scene.lines[l.lineIndex]?.text}” — ${l.score}%`}
-                              className="flex flex-col items-center gap-1"
-                            >
-                              <span className="w-3.5 h-10 bg-surface-container-lowest border-2 border-outline-variant rounded-full overflow-hidden flex flex-col justify-end">
-                                <span
-                                  className={l.score >= 65 ? "bg-tertiary" : l.score >= 40 ? "bg-secondary-container" : "bg-error"}
-                                  style={{ height: `${Math.max(8, l.score)}%` }}
-                                />
-                              </span>
-                              <span className="text-[10px] text-on-surface-variant tabular-nums">{l.lineIndex + 1}</span>
-                            </span>
-                          ))}
-                        </div>
-                      </div>
-                    )}
-                    <div className="flex gap-4 flex-wrap justify-center max-w-xl">
-                      <NeonButton variant="primary" onClick={() => void play()}>
-                        <Icon name="replay" /> Watch again
-                      </NeonButton>
-                      <NeonButton variant="tertiary" onClick={() => void downloadCut()}>
-                        <Icon name="download" /> Download the cut
-                      </NeonButton>
-                      {canShareFiles() && (
-                        <NeonButton variant="secondary" onClick={() => void shareCut()}>
-                          <Icon name="ios_share" /> Share
-                        </NeonButton>
-                      )}
-                      <NeonButton variant="secondary" onClick={onBackToStudio}>
-                        <Icon name="mic" /> Re-record lines
-                      </NeonButton>
-                      <NeonButton variant="ghost" onClick={onNewScene}>
-                        <Icon name="movie_filter" /> New scene
-                      </NeonButton>
-                    </div>
-                    {exportError && (
-                      <p className="text-error text-sm font-bold">{exportError}</p>
-                    )}
-                  </>
+                  <p className="font-display font-extrabold text-3xl md:text-4xl uppercase text-gold">
+                    That's a wrap!
+                  </p>
                 ) : (
                   <NeonButton variant="tertiary" onClick={() => void play()} className="py-5 px-12 text-lg">
                     <Icon name="play_arrow" className="text-3xl" /> Roll film
@@ -273,6 +227,58 @@ export default function Screening({
               style={{ width: `${Math.min(100, (timeMs / scene.durationMs) * 100)}%` }}
             />
           </div>
+
+          {/* Wrap panel: score + actions */}
+          {ended && !playing && exportProgress === null && (
+            <div className="flex flex-col items-center gap-4 mt-5 text-center">
+              {dubScore && (
+                <div className="flex flex-col items-center gap-2">
+                  <p className="font-display font-extrabold text-2xl uppercase">
+                    Voice match:{" "}
+                    <span className="text-secondary-container">{dubScore.total}%</span>
+                  </p>
+                  <Chip color="lime">{dubScore.grade}</Chip>
+                  <div className="flex gap-1.5 flex-wrap justify-center max-w-md">
+                    {dubScore.lines.map((l) => (
+                      <span
+                        key={l.lineIndex}
+                        title={`Line ${l.lineIndex + 1}: “${scene.lines[l.lineIndex]?.text}” — ${l.score}%`}
+                        className="flex flex-col items-center gap-1"
+                      >
+                        <span className="w-3.5 h-10 bg-surface-container-lowest border-2 border-outline-variant rounded-full overflow-hidden flex flex-col justify-end">
+                          <span
+                            className={l.score >= 65 ? "bg-tertiary" : l.score >= 40 ? "bg-secondary-container" : "bg-error"}
+                            style={{ height: `${Math.max(8, l.score)}%` }}
+                          />
+                        </span>
+                        <span className="text-[10px] text-on-surface-variant tabular-nums">{l.lineIndex + 1}</span>
+                      </span>
+                    ))}
+                  </div>
+                </div>
+              )}
+              <div className="flex gap-3 md:gap-4 flex-wrap justify-center max-w-xl">
+                <NeonButton variant="primary" onClick={() => void play()}>
+                  <Icon name="replay" /> Watch again
+                </NeonButton>
+                <NeonButton variant="tertiary" onClick={() => void downloadCut()}>
+                  <Icon name="download" /> Download the cut
+                </NeonButton>
+                {canShareFiles() && (
+                  <NeonButton variant="secondary" onClick={() => void shareCut()}>
+                    <Icon name="ios_share" /> Share
+                  </NeonButton>
+                )}
+                <NeonButton variant="secondary" onClick={onBackToStudio}>
+                  <Icon name="mic" /> Re-record lines
+                </NeonButton>
+                <NeonButton variant="ghost" onClick={onNewScene}>
+                  <Icon name="movie_filter" /> New scene
+                </NeonButton>
+              </div>
+              {exportError && <p className="text-error text-sm font-bold">{exportError}</p>}
+            </div>
+          )}
         </Card>
 
         {playing && (

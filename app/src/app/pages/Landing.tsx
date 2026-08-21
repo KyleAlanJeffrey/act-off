@@ -17,7 +17,7 @@ export default function Landing({
       <BgBlobs />
       <main className="relative z-10 flex flex-col items-center gap-10 w-full max-w-xl">
         <div className="text-center">
-          <h1 className="font-display font-extrabold text-6xl md:text-7xl uppercase tracking-tighter">
+          <h1 className="font-display font-extrabold text-4xl sm:text-5xl md:text-7xl uppercase tracking-tighter whitespace-nowrap">
             {TITLE.map((ch, i) => (
               <span
                 key={i}

@@ -67,7 +67,7 @@ export default function SceneSelect({ scenes, mic, onMicReady, onPick, onBack, o
   }, [mic]);
 
   return (
-    <div className="min-h-screen p-8 relative">
+    <div className="min-h-screen p-4 md:p-8 relative">
       <BgBlobs />
       <main className="relative z-10 max-w-4xl mx-auto flex flex-col gap-8">
         <header className="flex items-center justify-between">
