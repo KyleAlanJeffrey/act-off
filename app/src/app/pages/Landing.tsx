@@ -133,7 +133,10 @@ function SceneStrips({ scenes }: { scenes: Scene[] }) {
                         key={i}
                         src={src}
                         alt=""
-                        loading="lazy"
+                        // NOT loading="lazy": iOS Safari never paints lazy
+                        // images inside transformed containers (the strips are
+                        // rotated/scaled), leaving the backdrop blank.
+                        decoding="async"
                         className="h-28 md:h-36 aspect-video object-cover rounded-md border-2 border-outline-variant"
                       />
                     ))}
