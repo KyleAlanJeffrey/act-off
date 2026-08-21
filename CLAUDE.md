@@ -1,5 +1,15 @@
 # Dub-Off — project rules
 
+- **Verify before committing.** Never commit a speculative fix. Reproduce the
+  problem, apply the candidate change in the working tree only, measure that
+  it actually fixes the symptom (simulator, profiler, screenshots — whatever
+  proves it), and ask the user to verify on their end. Only commit after
+  their confirmation.
+- **Isolate one variable at a time when debugging.** Bisect with measurements,
+  not theories — a plausible cause is not a proven cause.
+- **Styling rules live in [STYLING.md](STYLING.md).** Read it before touching
+  CSS, theme tokens, or anything visual — it includes hard performance rules
+  (e.g. no large `filter: blur()`).
 - **Mobile compatible.** Every player-facing surface (landing, lobby, scene
   select, studio, screening) must work on phones: responsive layout, touch
   interactions, and mobile Safari/Chrome support for mic capture (getUserMedia),
@@ -12,6 +22,3 @@
 - **Commit and push after each completed feature.**
 - Two separate apps: `app/` (the game, React+Vite on a Worker) and `site/`
   (static SEO landing). They share nothing and deploy independently.
-- Styling flows through the Tailwind v4 `@theme` tokens in
-  `app/src/app/index.css` (Pop-Neon Night). Canvas code reads tokens via
-  `lib/theme.ts` — no hardcoded palette hexes.
