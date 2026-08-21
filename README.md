@@ -1,6 +1,6 @@
 # 🎬 Dub-Off
 
-A desktop web party game where friends re-record the dialogue of a movie scene **line by
+A web party game — desktop and mobile — where friends re-record the dialogue of a movie scene **line by
 line** with their own voices, then watch the dubbed scene back together and vote for the
 **Favorite Voice**. Inspired by [The Choicer Voicer](https://yeahmaybe.itch.io/the-choicer-voicer)'s
 dub mode.
