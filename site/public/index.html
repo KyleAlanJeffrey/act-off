@@ -101,8 +101,13 @@
 
     /* ---- Ambient blobs ---- */
     .blob {
-      position: fixed; border-radius: 50%; filter: blur(110px);
-      mix-blend-mode: screen; pointer-events: none; z-index: 0;
+      position: fixed; pointer-events: none; z-index: 0;
+      /* Soft edges via a gradient mask, NOT filter: blur(110px) — the blur
+         makes iOS Safari's GPU process software-rasterize the whole blob on
+         load (measured ~10s of multi-core burn on iPhone). */
+      -webkit-mask-image: radial-gradient(closest-side, black 20%, transparent);
+      mask-image: radial-gradient(closest-side, black 20%, transparent);
+      mix-blend-mode: screen;
       animation: blob-pulse 9s ease-in-out infinite;
     }
     .blob.p { width: 480px; height: 480px; background: rgba(189,0,255,.28); top: -120px; left: -120px; }

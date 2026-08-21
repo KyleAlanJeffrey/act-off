@@ -100,7 +100,11 @@ body {
   50% { opacity: 0.5; transform: scale(1.08); }
 }
 .bg-blob {
-  @apply absolute rounded-full pointer-events-none mix-blend-screen;
-  filter: blur(110px);
+  @apply absolute pointer-events-none mix-blend-screen;
+  /* Soft edges via a gradient mask, NOT filter: blur(110px) — the blur
+     makes iOS Safari's GPU process software-rasterize the whole blob on
+     load (measured ~10s of multi-core burn on iPhone). */
+  -webkit-mask-image: radial-gradient(closest-side, black 20%, transparent);
+  mask-image: radial-gradient(closest-side, black 20%, transparent);
   animation: blob-pulse 9s ease-in-out infinite;
 }
