@@ -11,7 +11,10 @@ export function BgBlobs() {
   return (
     <div className="fixed inset-0 pointer-events-none opacity-40 overflow-hidden">
       <div className="bg-blob top-[8%] left-[18%] w-[38vw] h-[38vw] bg-primary-container" />
-      <div className="bg-blob bottom-[15%] right-[8%] w-[32vw] h-[32vw] bg-secondary-container" />
+      <div
+        className="bg-blob bottom-[15%] right-[8%] w-[32vw] h-[32vw] bg-secondary-container"
+        style={{ animationDelay: "-4.5s" }}
+      />
     </div>
   );
 }

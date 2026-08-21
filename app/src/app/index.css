@@ -90,21 +90,18 @@ body {
   from { transform: translateX(0); }
   to { transform: translateX(-50%); }
 }
-.strip-drift {
-  animation: strip-drift var(--strip-duration, 80s) linear infinite;
-  /* Own compositor layer: the drift then never repaints, only transforms */
-  will-change: transform;
-}
+.strip-drift { animation: strip-drift var(--strip-duration, 80s) linear infinite; }
 .strip-drift-reverse { animation-direction: reverse; }
 @media (prefers-reduced-motion: reduce) {
   .strip-drift { animation: none; }
 }
 
+@keyframes blob-pulse {
+  0%, 100% { opacity: 0.35; transform: scale(1); }
+  50% { opacity: 0.5; transform: scale(1.08); }
+}
 .bg-blob {
   @apply absolute rounded-full pointer-events-none mix-blend-screen;
-  filter: blur(80px);
-  opacity: 0.45;
-  /* Deliberately NOT animated: pulsing scale/opacity on a blurred, blended
-     layer drops WebKit off the compositor fast path — it re-rasterizes the
-     blur every frame and pegged iPhone CPUs. Static blobs rasterize once. */
+  filter: blur(110px);
+  animation: blob-pulse 9s ease-in-out infinite;
 }
