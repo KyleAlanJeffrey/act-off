@@ -93,6 +93,10 @@ export default function Waveform({
       }
     } else if (liveLevels && liveLevels.length > 0) {
       g.fillStyle = liveColor;
+      // Normalize to the take-so-far's own max (same floor as bufferPeaks) so
+      // the live bars match what the decoded take will look like afterward.
+      let liveNorm = 0.25;
+      for (const v of liveLevels) if (v > liveNorm) liveNorm = v;
       const samplesPerBar = Math.max(1, Math.ceil((axisMs / BARS) / liveSampleMs));
       const barCount = Math.ceil(liveLevels.length / samplesPerBar);
       for (let b = 0; b < barCount; b++) {
@@ -101,7 +105,7 @@ export default function Waveform({
           max = Math.max(max, liveLevels[s]);
         }
         const x = b * (barW + gap);
-        const h = Math.max(2, max * (mid - 6));
+        const h = Math.max(2, (max / liveNorm) * (mid - 6));
         g.beginPath();
         g.roundRect(x, mid + 2, barW, h, barW / 2);
         g.fill();

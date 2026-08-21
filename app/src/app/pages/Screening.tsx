@@ -1,9 +1,10 @@
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import type { Scene, Take } from "../types";
 import { sceneAssetUrl } from "../types";
 import { audioCtx, scheduleScreening } from "../lib/audio";
 import { BgBlobs, Card, Chip, Icon, NeonButton } from "../components/ui";
 import { canShareFiles, downloadBlob, dubFilename, exportDub } from "../lib/export";
+import { scoreDub } from "../lib/score";
 
 type Props = {
   scene: Scene;
@@ -33,6 +34,12 @@ export default function Screening({
   const [exportProgress, setExportProgress] = useState<number | null>(null);
   const [exportError, setExportError] = useState<string | null>(null);
   const cutRef = useRef<Blob | null>(null);
+
+  // Computed once per takes-set; ~milliseconds of envelope math
+  const dubScore = useMemo(
+    () => scoreDub({ scene, vocals: vocalsBuffer, original: originalBuffer, takes }),
+    [scene, vocalsBuffer, originalBuffer, takes]
+  );
 
   const activeLine = scene.lines.find((l) => timeMs >= l.startMs && timeMs <= l.endMs + 350);
   const activeCharacter = activeLine
@@ -201,6 +208,32 @@ export default function Screening({
                 ) : ended ? (
                   <>
                     <p className="font-display font-extrabold text-4xl uppercase text-gold">That's a wrap!</p>
+                    {dubScore && (
+                      <div className="flex flex-col items-center gap-2 -mt-2">
+                        <p className="font-display font-extrabold text-2xl uppercase">
+                          Voice match:{" "}
+                          <span className="text-secondary-container">{dubScore.total}%</span>
+                        </p>
+                        <Chip color="lime">{dubScore.grade}</Chip>
+                        <div className="flex gap-1.5 flex-wrap justify-center max-w-md">
+                          {dubScore.lines.map((l) => (
+                            <span
+                              key={l.lineIndex}
+                              title={`Line ${l.lineIndex + 1}: “${scene.lines[l.lineIndex]?.text}” — ${l.score}%`}
+                              className="flex flex-col items-center gap-1"
+                            >
+                              <span className="w-3.5 h-10 bg-surface-container-lowest border-2 border-outline-variant rounded-full overflow-hidden flex flex-col justify-end">
+                                <span
+                                  className={l.score >= 65 ? "bg-tertiary" : l.score >= 40 ? "bg-secondary-container" : "bg-error"}
+                                  style={{ height: `${Math.max(8, l.score)}%` }}
+                                />
+                              </span>
+                              <span className="text-[10px] text-on-surface-variant tabular-nums">{l.lineIndex + 1}</span>
+                            </span>
+                          ))}
+                        </div>
+                      </div>
+                    )}
                     <div className="flex gap-4 flex-wrap justify-center max-w-xl">
                       <NeonButton variant="primary" onClick={() => void play()}>
                         <Icon name="replay" /> Watch again

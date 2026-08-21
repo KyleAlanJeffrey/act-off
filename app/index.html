@@ -11,8 +11,12 @@
       href="https://fonts.googleapis.com/css2?family=Quicksand:wght@500;600;700&family=Syne:wght@700;800&display=swap"
       rel="stylesheet"
     />
+    <!-- Subset to exactly the icons the app uses: ~5KB instead of ~310KB.
+         Adding a new <Icon name="…"> requires appending it to icon_names
+         here, or it renders as its text name. display=block so icons are
+         briefly invisible instead of flashing ligature text. -->
     <link
-      href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200&display=swap"
+      href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200&icon_names=add,arrow_back,arrow_forward,bookmark_add,check,check_circle,close,cloud_upload,content_copy,delete,download,fiber_manual_record,file_open,fit_width,folder_open,graphic_eq,hourglass_top,ios_share,link,lock,mic,mic_external_on,mic_off,movie,movie_edit,movie_filter,pause_circle,play_arrow,play_circle,radio_button_unchecked,replay,sort,stop,stop_circle,subtitles,theater_comedy,zoom_in,zoom_out&display=block"
       rel="stylesheet"
     />
   </head>

@@ -102,7 +102,11 @@ export class MicSession {
     const ac = audioCtx();
     const src = ac.createMediaStreamSource(stream);
     this.analyser = ac.createAnalyser();
-    this.analyser.fftSize = 512;
+    // ~43ms window at 48kHz: level() is polled every 50ms, so max-abs over
+    // this window ≈ the true peak of the interval (512 saw only ~11ms and
+    // missed most transients, making the live waveform disagree with the
+    // decoded take's).
+    this.analyser.fftSize = 2048;
     src.connect(this.analyser);
     this.levelData = new Uint8Array(this.analyser.frequencyBinCount);
   }
