@@ -1,0 +1,152 @@
+{
+  "id": "titanic-i-m-flying-scene",
+  "title": "I'm Flying",
+  "tagline": "Jack and Rose at the bow of the Titanic.",
+  "sourceUrl": "https://www.youtube.com/watch?v=sRkrvgy-feU",
+  "characters": [
+    {
+      "id": "rose",
+      "name": "Rose",
+      "emoji": "🎭"
+    },
+    {
+      "id": "jack",
+      "name": "Jack",
+      "emoji": "🎭"
+    }
+  ],
+  "lines": [
+    {
+      "characterId": "rose",
+      "text": "Hello Jack",
+      "startMs": 7704,
+      "endMs": 8656
+    },
+    {
+      "characterId": "rose",
+      "text": "I changed my mind",
+      "startMs": 14329,
+      "endMs": 15821
+    },
+    {
+      "characterId": "rose",
+      "text": "Said you wouldnt be--",
+      "startMs": 22279,
+      "endMs": 23244
+    },
+    {
+      "characterId": "jack",
+      "text": "shhh",
+      "startMs": 22728,
+      "endMs": 23411
+    },
+    {
+      "characterId": "jack",
+      "text": "Gimme your hand",
+      "startMs": 26317,
+      "endMs": 27495
+    },
+    {
+      "characterId": "jack",
+      "text": "Now close your eyes.",
+      "startMs": 34835,
+      "endMs": 37139
+    },
+    {
+      "characterId": "jack",
+      "text": "Go on.",
+      "startMs": 37959,
+      "endMs": 39066
+    },
+    {
+      "characterId": "jack",
+      "text": "Step up.",
+      "startMs": 42653,
+      "endMs": 43875
+    },
+    {
+      "characterId": "jack",
+      "text": "Now hold on to the railing.",
+      "startMs": 47616,
+      "endMs": 49617
+    },
+    {
+      "characterId": "jack",
+      "text": "Keep your eyes closed. Don't peek.",
+      "startMs": 49717,
+      "endMs": 51554
+    },
+    {
+      "characterId": "rose",
+      "text": "Im not.",
+      "startMs": 51561,
+      "endMs": 52223
+    },
+    {
+      "characterId": "jack",
+      "text": "Step up on the rail.",
+      "startMs": 53782,
+      "endMs": 55551
+    },
+    {
+      "characterId": "jack",
+      "text": "Hold on.",
+      "startMs": 60037,
+      "endMs": 61065
+    },
+    {
+      "characterId": "jack",
+      "text": "Hold on. Keep your eyes closed.",
+      "startMs": 61593,
+      "endMs": 64283
+    },
+    {
+      "characterId": "rose",
+      "text": "Heh",
+      "startMs": 63450,
+      "endMs": 64121
+    },
+    {
+      "characterId": "jack",
+      "text": "Do you trust me?",
+      "startMs": 64605,
+      "endMs": 66004
+    },
+    {
+      "characterId": "rose",
+      "text": "I trust you.",
+      "startMs": 66477,
+      "endMs": 67683
+    },
+    {
+      "characterId": "jack",
+      "text": "All right. Open your eyes.",
+      "startMs": 77623,
+      "endMs": 80745
+    },
+    {
+      "characterId": "rose",
+      "text": ">> Flying. Jack.",
+      "startMs": 87320,
+      "endMs": 90491
+    },
+    {
+      "characterId": "jack",
+      "text": ">> Come, Josephine, my flying machine. Going up, shes goes, up she goes.",
+      "startMs": 114478,
+      "endMs": 124755
+    },
+    {
+      "characterId": "rose",
+      "text": "Heh",
+      "startMs": 116263,
+      "endMs": 117277
+    },
+    {
+      "characterId": "rose",
+      "text": "Hehh",
+      "startMs": 117421,
+      "endMs": 119174
+    }
+  ]
+}
