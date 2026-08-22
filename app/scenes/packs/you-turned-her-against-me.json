@@ -1,0 +1,128 @@
+{
+  "id": "you-turned-her-against-me",
+  "title": "“YOU TURNED HER AGAINST ME!”",
+  "tagline": "",
+  "sourceUrl": "https://www.youtube.com/watch?v=6Vi_dCqdn2A",
+  "characters": [
+    {
+      "id": "anakin",
+      "name": "Anakin",
+      "emoji": "🎭"
+    },
+    {
+      "id": "obi-wan",
+      "name": "Obi-wan",
+      "emoji": "🎭"
+    }
+  ],
+  "lines": [
+    {
+      "characterId": "anakin",
+      "text": "You turned her against me",
+      "startMs": 2328,
+      "endMs": 4218
+    },
+    {
+      "characterId": "obi-wan",
+      "text": "You have done that yourself",
+      "startMs": 5888,
+      "endMs": 7782
+    },
+    {
+      "characterId": "anakin",
+      "text": "You will not take her from me",
+      "startMs": 13148,
+      "endMs": 14796
+    },
+    {
+      "characterId": "obi-wan",
+      "text": "Youre anger and your lust for power have already done that",
+      "startMs": 15321,
+      "endMs": 19018
+    },
+    {
+      "characterId": "obi-wan",
+      "text": "You have allowed this",
+      "startMs": 22946,
+      "endMs": 24394
+    },
+    {
+      "characterId": "obi-wan",
+      "text": "dark lord to twist your mind until now",
+      "startMs": 24485,
+      "endMs": 27197
+    },
+    {
+      "characterId": "obi-wan",
+      "text": "Until now you have become the very thing you swore to destory",
+      "startMs": 28577,
+      "endMs": 32143
+    },
+    {
+      "characterId": "anakin",
+      "text": "Dont lecture me Obi-wan",
+      "startMs": 32204,
+      "endMs": 34204
+    },
+    {
+      "characterId": "anakin",
+      "text": "I see through the lies of the jedi",
+      "startMs": 34364,
+      "endMs": 36870
+    },
+    {
+      "characterId": "anakin",
+      "text": "I do not fear the dark side as you do",
+      "startMs": 37636,
+      "endMs": 40219
+    },
+    {
+      "characterId": "anakin",
+      "text": "I have brough peace",
+      "startMs": 42228,
+      "endMs": 43794
+    },
+    {
+      "characterId": "anakin",
+      "text": "Freedom",
+      "startMs": 44051,
+      "endMs": 45086
+    },
+    {
+      "characterId": "anakin",
+      "text": "Justice",
+      "startMs": 45192,
+      "endMs": 46226
+    },
+    {
+      "characterId": "anakin",
+      "text": "And security to my new empire",
+      "startMs": 46514,
+      "endMs": 48928
+    },
+    {
+      "characterId": "obi-wan",
+      "text": "Your new empire?",
+      "startMs": 49876,
+      "endMs": 51949
+    },
+    {
+      "characterId": "anakin",
+      "text": "Dont make me kill you",
+      "startMs": 52849,
+      "endMs": 54849
+    },
+    {
+      "characterId": "obi-wan",
+      "text": "Anakin, my allegiance is to the Republic",
+      "startMs": 55999,
+      "endMs": 58945
+    },
+    {
+      "characterId": "obi-wan",
+      "text": "To democracy",
+      "startMs": 58959,
+      "endMs": 60707
+    }
+  ]
+}
