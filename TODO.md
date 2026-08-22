@@ -1,6 +1,17 @@
 # TODO
 
-*(nothing open — add items here)*
+- [ ] **Share center** — post your finished cut to a public gallery where
+      people can watch each other's dubs and upvote them. Rough shape:
+      - "Share my cut" action on the screening wrap panel: renders the dub
+        (existing export pipeline) and uploads it — likely a new R2 bucket
+        (`dub-off-shares`) fronted by the worker, plus a KV/D1 record
+        (scene id, title, author name, created, votes).
+      - A `/shares` gallery page: browse by scene or by recency/top, inline
+        playback, upvote button (one vote per browser to start — no
+        accounts yet).
+      - Mobile compatible like every player surface.
+      - Open questions: moderation/takedown story (user uploads of
+        copyrighted-clip remixes), name/anon policy, vote spam protection.
 
 ## Done
 - [x] Load fix verified in production: CI auto-deploys are live, the app
