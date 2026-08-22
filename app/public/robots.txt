@@ -1,0 +1,6 @@
+User-agent: *
+Allow: /
+# The scene editor is a desktop dev tool, not a page worth indexing
+Disallow: /editor
+
+Sitemap: https://app.dub-off.com/sitemap.xml

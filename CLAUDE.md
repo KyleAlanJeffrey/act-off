@@ -22,3 +22,6 @@
 - **Commit and push after each completed feature.**
 - Two separate apps: `app/` (the game, React+Vite on a Worker) and `site/`
   (static SEO landing). They share nothing and deploy independently.
+- **The landing page (`site/`) must be fully static** — every request stays on
+  dub-off.com: no third-party stylesheets, fonts, scripts, or trackers. Fonts
+  are self-hosted in `site/public/fonts/` (OFL-licensed, latin subsets).

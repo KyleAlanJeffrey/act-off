@@ -59,13 +59,28 @@
   }
   </script>
 
-  <link rel="preconnect" href="https://fonts.googleapis.com" />
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <!-- Every CTA goes to the app — warm up DNS+TLS so the click lands fast -->
   <link rel="preconnect" href="https://app.dub-off.com" />
-  <link href="https://fonts.googleapis.com/css2?family=Syne:wght@700;800&family=Quicksand:wght@500;600;700&display=swap" rel="stylesheet" />
+  <!-- Fully static: fonts are self-hosted (OFL-licensed variable fonts,
+       latin subset) — the page makes no third-party requests. -->
+  <link rel="preload" href="/fonts/syne-latin.woff2" as="font" type="font/woff2" crossorigin />
+  <link rel="preload" href="/fonts/quicksand-latin.woff2" as="font" type="font/woff2" crossorigin />
 
   <style>
+    @font-face {
+      font-family: 'Syne';
+      font-style: normal;
+      font-weight: 700 800;
+      font-display: swap;
+      src: url(/fonts/syne-latin.woff2) format('woff2');
+    }
+    @font-face {
+      font-family: 'Quicksand';
+      font-style: normal;
+      font-weight: 500 700;
+      font-display: swap;
+      src: url(/fonts/quicksand-latin.woff2) format('woff2');
+    }
     :root {
       --bg: #100f2f;
       --on-bg: #e2dfff;
